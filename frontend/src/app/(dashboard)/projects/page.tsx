@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Search, Eye } from 'lucide-react';
 import Link from 'next/link';
-import Cookies from 'js-cookie';
 import { TablePagination } from '@/components/ui/table-pagination';
+import api from '@/lib/api';
 
 interface Company {
     id: string;
@@ -46,13 +45,9 @@ export default function ProjectsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const token = Cookies.get('access_token');
-
             // Fetch companies
-            const companiesRes = await fetch('http://localhost:8000/api/v1/companies/', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const companiesData = await companiesRes.json();
+            const companiesRes = await api.get('/companies/');
+            const companiesData = companiesRes.data;
             setCompanies(companiesData.results || companiesData);
 
             // Build query params
@@ -60,10 +55,8 @@ export default function ProjectsPage() {
             if (search) params.append('search', search);
 
             // Fetch projects
-            const projectsRes = await fetch(`http://localhost:8000/api/v1/projects/?${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const projectsData = await projectsRes.json();
+            const projectsRes = await api.get(`/projects/?${params}`);
+            const projectsData = projectsRes.data;
 
             let filteredProjects = projectsData.results || projectsData;
 
@@ -99,112 +92,108 @@ export default function ProjectsPage() {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">All Projects</h2>
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">All Projects</h2>
+                    <p className="text-muted-foreground">
+                        View and filter all projects across companies.
+                    </p>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Projects</CardTitle>
-                    <CardDescription>View and filter all projects across companies</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search projects..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="pl-8"
-                            />
-                        </div>
-                        <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                            <SelectTrigger className="w-full md:w-[200px]">
-                                <SelectValue placeholder="All Companies" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Companies</SelectItem>
-                                {companies.map((company) => (
-                                    <SelectItem key={company.id} value={company.id.toString()}>
-                                        {company.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                            <SelectTrigger className="w-full md:w-[200px]">
-                                <SelectValue placeholder="All Statuses" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="DRAFT">Draft</SelectItem>
-                                <SelectItem value="IN_REVIEW">In Review</SelectItem>
-                                <SelectItem value="FINAL">Final</SelectItem>
-                                <SelectItem value="ARCHIVED">Archived</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Company</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Start Date</TableHead>
-                                    <TableHead>End Date</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-8">
-                                            Loading...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : projects.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                            No projects found
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    projects.map((project) => (
-                                        <TableRow key={project.id}>
-                                            <TableCell className="font-medium">{project.title}</TableCell>
-                                            <TableCell>{getCompanyName(project.company)}</TableCell>
-                                            <TableCell>{project.engagement_type}</TableCell>
-                                            <TableCell>{getStatusBadge(project.status)}</TableCell>
-                                            <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
-                                            <TableCell>{new Date(project.end_date).toLocaleDateString()}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={`/project/${project.id}`}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-
-                    <TablePagination
-                        currentPage={page}
-                        totalItems={totalCount}
-                        itemsPerPage={20}
-                        onPageChange={setPage}
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search projects..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-8"
                     />
-                </CardContent>
-            </Card>
+                </div>
+                <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                        <SelectValue placeholder="All Companies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Companies</SelectItem>
+                        {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id.toString()}>
+                                {company.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                        <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="DRAFT">Draft</SelectItem>
+                        <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                        <SelectItem value="FINAL">Final</SelectItem>
+                        <SelectItem value="ARCHIVED">Archived</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Company</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead>End Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center py-8">
+                                    Loading...
+                                </TableCell>
+                            </TableRow>
+                        ) : projects.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    No projects found
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            projects.map((project) => (
+                                <TableRow key={project.id}>
+                                    <TableCell className="font-medium">{project.title}</TableCell>
+                                    <TableCell>{getCompanyName(project.company)}</TableCell>
+                                    <TableCell>{project.engagement_type}</TableCell>
+                                    <TableCell>{getStatusBadge(project.status)}</TableCell>
+                                    <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
+                                    <TableCell>{new Date(project.end_date).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link href={`/project/${project.id}`}>
+                                                <Eye className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            <TablePagination
+                currentPage={page}
+                totalItems={totalCount}
+                itemsPerPage={20}
+                onPageChange={setPage}
+            />
         </div>
     );
 }

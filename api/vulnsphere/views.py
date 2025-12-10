@@ -1,0 +1,538 @@
+from rest_framework import viewsets, permissions, filters, decorators, response, status
+from django.shortcuts import get_object_or_404
+from .models import User, Company, Asset, Project, Vulnerability, VulnerabilityAsset, Retest, Comment, Attachment, ActivityLog, ProjectAsset, ReportTemplate, GeneratedReport
+from .serializers import (
+    UserSerializer, CompanySerializer,
+    AssetSerializer, ProjectSerializer, VulnerabilitySerializer, VulnerabilityAssetSerializer,
+    RetestSerializer, CommentSerializer, AttachmentSerializer, ActivityLogSerializer,
+    ReportTemplateSerializer, GeneratedReportSerializer, ReportGenerationRequestSerializer
+)
+from .report_generator import ReportGenerator
+from .permissions import IsAdmin, IsAdminOrTester, IsTesterOrAdmin, CanRequestRetest
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAdmin]
+
+    @decorators.action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return response.Response(serializer.data)
+
+class CompanyViewSet(viewsets.ModelViewSet):
+    """
+    Admin: Full access.
+    All authenticated users: Can view all companies (roles are global now).
+    """
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [permissions.IsAuthenticated()]
+
+# CompanyMembershipViewSet removed - users now have global roles
+
+
+class CompanyScopedMixin:
+    """
+    Mixin to filter queryset by company in URL and verify permissions.
+    Expects 'company_pk' in kwargs.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Admin sees all? Or admin also navigating via company structure?
+        # The IsCompanyMember permission handles admin check.
+        # But we still need to filter to the specific company in the URL.
+        company_pk = self.kwargs.get('company_pk')
+        if not company_pk:
+             return self.queryset.none()
+        return self.queryset.filter(company__pk=company_pk)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if 'company_pk' in self.kwargs:
+            context['company'] = get_object_or_404(Company, pk=self.kwargs['company_pk'])
+        return context
+
+class AssetViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
+    queryset = Asset.objects.all()
+    serializer_class = AssetSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTesterOrAdmin]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'identifier', 'type']
+
+class ProjectViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'summary']
+    permission_classes = [permissions.IsAuthenticated, IsTesterOrAdmin]
+    
+    def get_queryset(self):
+        """Support both /projects/{id}/ and /companies/{cid}/projects/{id}/"""
+        company_pk = self.kwargs.get('company_pk')
+        
+        if company_pk:
+            # Nested access - filter by company
+            return Project.objects.filter(company__pk=company_pk)
+        
+        # Direct access - all users can see all projects (global roles)
+        return Project.objects.all()
+
+class VulnerabilityViewSet(viewsets.ModelViewSet):
+    queryset = Vulnerability.objects.all()
+    serializer_class = VulnerabilitySerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'code']
+    
+    # Nested under Project, so we get project_pk and company_pk (from parent router)
+    # URL: /companies/{cid}/projects/{pid}/vulnerabilities/
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), IsTesterOrAdmin()]
+
+    def get_queryset(self):
+        project_pk = self.kwargs.get('project_pk')
+        company_pk = self.kwargs.get('company_pk')
+        if not project_pk or not company_pk:
+            return Vulnerability.objects.none()
+        
+        # Ensure project belongs to company
+        return Vulnerability.objects.filter(project__pk=project_pk, project__company__pk=company_pk)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        project_pk = self.kwargs.get('project_pk')
+        company_pk = self.kwargs.get('company_pk')
+        
+        if project_pk and company_pk:
+            context['project'] = get_object_or_404(Project, pk=project_pk, company__pk=company_pk)
+        
+        return context
+
+
+    @decorators.action(detail=True, methods=['post'], url_path='change-status')
+    def change_status(self, request, project_pk=None, company_pk=None, pk=None):
+        vuln = self.get_object()
+        new_status = request.data.get('status')
+        if not new_status:
+             return response.Response({'error': 'Status required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if new_status not in Vulnerability.Status.values:
+             return response.Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+
+        old_status = vuln.status
+        vuln.status = new_status
+        vuln.last_edited_by = request.user
+        vuln.save()
+        
+        # Log activity
+        ActivityLog.objects.create(
+            company=vuln.report.company, # vuln.project.company via property
+            user=request.user,
+            entity_type='VULNERABILITY',
+            entity_id=vuln.pk,
+            action='STATUS_CHANGED',
+            metadata={'old_status': old_status, 'new_status': new_status}
+        )
+        
+        return response.Response({'status': 'updated', 'new_status': new_status})
+
+
+class VulnerabilityAssetViewSet(viewsets.ModelViewSet):
+    serializer_class = VulnerabilityAssetSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        vulnerability_pk = self.kwargs.get('vulnerability_pk')
+        if not vulnerability_pk:
+            return VulnerabilityAsset.objects.none()
+        return VulnerabilityAsset.objects.filter(vulnerability__pk=vulnerability_pk)
+
+    def perform_create(self, serializer):
+        vulnerability_pk = self.kwargs.get('vulnerability_pk')
+        project_pk = self.kwargs.get('project_pk')
+        company_pk = self.kwargs.get('company_pk')
+        
+        vulnerability = get_object_or_404(Vulnerability, pk=vulnerability_pk, project__pk=project_pk, project__company__pk=company_pk)
+        serializer.save(vulnerability=vulnerability)
+
+
+class RetestViewSet(viewsets.ModelViewSet):
+    queryset = Retest.objects.all()
+    serializer_class = RetestSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+        # CREATE: All can request retests (REQUEST type) or add RETEST type
+        return [permissions.IsAuthenticated(), CanRequestRetest()]
+
+    def get_queryset(self):
+        vuln_pk = self.kwargs.get('vulnerability_pk')
+        # Here we only get vuln_pk. Use lookup.
+        # But wait, how do we enforce company scope?
+        # We need to find the company from vuln ID and check membership.
+        
+        if not vuln_pk: return Retest.objects.none()
+        return Retest.objects.filter(vulnerability__pk=vuln_pk)
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        # Custom logic for checking company access if not using nested URL with company_id
+        pass
+
+    def filter_queryset(self, queryset):
+        # All users can see all retests (simplified - global roles)
+        return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if 'vulnerability_pk' in self.kwargs:
+            context['vulnerability'] = get_object_or_404(Vulnerability, pk=self.kwargs['vulnerability_pk'])
+        return context
+    
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    
+    def get_queryset(self):
+        # All authenticated users can see all comments (simplified)
+        return Comment.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+class AttachmentViewSet(viewsets.ModelViewSet):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        qs = Attachment.objects.all()
+        
+        # Handle nesting:
+        project_pk = self.kwargs.get('project_pk')
+        vulnerability_pk = self.kwargs.get('vulnerability_pk')
+
+        if project_pk:
+            qs = qs.filter(project__pk=project_pk)
+        if vulnerability_pk:
+            qs = qs.filter(vulnerability__pk=vulnerability_pk)
+        
+        # All  users can see all attachments (global roles)
+        return qs
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        project_pk = self.kwargs.get('project_pk')
+        vulnerability_pk = self.kwargs.get('vulnerability_pk')
+        company_pk = self.kwargs.get('company_pk')
+
+        if project_pk:
+            # Optionally check company_pk match if strictly nested
+            criteria = {'pk': project_pk}
+            if company_pk:
+                criteria['company__pk'] = company_pk
+            context['project'] = get_object_or_404(Project, **criteria)
+            
+        if vulnerability_pk:
+            criteria = {'pk': vulnerability_pk}
+            if project_pk:
+                criteria['project__pk'] = project_pk
+            if company_pk:
+                # project is a property on vuln in viewsets usage indirectly via query, but here:
+                # Vulnerability model has project field.
+                criteria['project__company__pk'] = company_pk
+            context['vulnerability'] = get_object_or_404(Vulnerability, **criteria)
+            
+        return context
+
+
+class ProjectAssetViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing project-asset attachments.
+    Nested under /companies/{cid}/projects/{pid}/assets/
+    """
+    serializer_class = AssetSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        # Only testers/admins can attach/detach, everyone can list
+        if self.action in ['list', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), IsTesterOrAdmin()]
+    
+    def get_queryset(self):
+        project_pk = self.kwargs.get('project_pk')
+        company_pk = self.kwargs.get('company_pk')
+        
+        if not project_pk or not company_pk:
+            return Asset.objects.none()
+        
+        # Return only assets attached to this project
+        return Asset.objects.filter(
+            projects__pk=project_pk,
+            projects__company__pk=company_pk
+        )
+    
+    def create(self, request, *args, **kwargs):
+        """Attach an asset to the project"""
+        project_pk = self.kwargs.get('project_pk')
+        company_pk = self.kwargs.get('company_pk')
+        asset_id = request.data.get('assetId')
+        
+        if not asset_id:
+            return response.Response(
+                {'error': 'assetId is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        project = get_object_or_404(Project, pk=project_pk, company__pk=company_pk)
+        asset = get_object_or_404(Asset, pk=asset_id, company__pk=company_pk)
+        
+        # Create or update the ProjectAsset
+        project_asset, created = ProjectAsset.objects.get_or_create(
+            project=project,
+            asset=asset,
+            defaults={'attached_by': request.user, 'auto_attached': False}
+        )
+        
+        if not created and project_asset.auto_attached:
+            # If it was auto-attached, mark it as manually confirmed
+            project_asset.auto_attached = False
+            project_asset.attached_by = request.user
+            project_asset.save()
+        
+        return response.Response(AssetSerializer(asset).data, status=status.HTTP_201_CREATED)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Detach an asset from the project"""
+        project_pk = self.kwargs.get('project_pk')
+        company_pk = self.kwargs.get('company_pk')
+        asset_id = kwargs.get('pk')
+        
+        project_asset = get_object_or_404(
+            ProjectAsset,
+            project__pk=project_pk,
+            project__company__pk=company_pk,
+            asset__pk=asset_id
+        )
+        
+        project_asset.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ActivityLog.objects.all()
+    serializer_class = ActivityLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        company_pk = self.kwargs.get('company_pk')
+        
+        # If accessed via /companies/{id}/activity/ - filter by company
+        if company_pk:
+            return ActivityLog.objects.filter(company__pk=company_pk).order_by('-created_at')
+        
+        # If accessed via /activity-logs/ (global endpoint) - only admins can access
+        if user.role == 'ADMIN':
+            return ActivityLog.objects.all().order_by('-created_at')
+        
+        # Non-admins see all activity logs (global roles)
+        return ActivityLog.objects.all().order_by('-created_at')
+
+
+
+class DashboardStatsViewSet(viewsets.ViewSet):
+    """
+    ViewSet for dashboard statistics.
+    Returns aggregated data across all companies the user has access to.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_accessible_companies(self, user):
+        """Get companies the user has access to - all companies for all users (global roles)"""
+        return Company.objects.all()
+
+    @decorators.action(detail=False, methods=['get'])
+    def overview(self, request):
+        """Get dashboard overview statistics"""
+        from django.db.models import Count, Q
+        from datetime import datetime, timedelta
+        
+        user = request.user
+        companies = self._get_accessible_companies(user)
+        
+        # Get all projects for accessible companies
+        projects = Project.objects.filter(company__in=companies)
+        
+        # Get all vulnerabilities for accessible companies
+        vulnerabilities = Vulnerability.objects.filter(project__company__in=companies)
+        
+        # Basic counts
+        total_projects = projects.count()
+        total_vulnerabilities = vulnerabilities.count()
+        critical_vulnerabilities = vulnerabilities.filter(severity='CRITICAL').count()
+        
+        # Vulnerability counts by severity
+        severity_distribution = {
+            'critical': vulnerabilities.filter(severity='CRITICAL').count(),
+            'high': vulnerabilities.filter(severity='HIGH').count(),
+            'medium': vulnerabilities.filter(severity='MEDIUM').count(),
+            'low': vulnerabilities.filter(severity='LOW').count(),
+            'info': vulnerabilities.filter(severity='INFO').count(),
+        }
+        
+        # Vulnerability counts by status
+        status_distribution = {
+            'open': vulnerabilities.filter(status='OPEN').count(),
+            'in_progress': vulnerabilities.filter(status='IN_PROGRESS').count(),
+            'resolved': vulnerabilities.filter(status='RESOLVED').count(),
+            'accepted_risk': vulnerabilities.filter(status='ACCEPTED_RISK').count(),
+            'false_positive': vulnerabilities.filter(status='FALSE_POSITIVE').count(),
+        }
+        
+        # Recent activity count (last 7 days)
+        seven_days_ago = datetime.now() - timedelta(days=7)
+        recent_activity_count = ActivityLog.objects.filter(
+            company__in=companies,
+            created_at__gte=seven_days_ago
+        ).count()
+        
+        # Recent vulnerabilities (last 10)
+        recent_vulnerabilities = vulnerabilities.order_by('-created_at')[:10]
+        recent_vulns_data = [{
+            'id': str(vuln.id),
+            'title': vuln.title,
+            'severity': vuln.severity,
+            'status': vuln.status,
+            'project_id': str(vuln.project.id),
+            'project_title': vuln.project.title,
+            'company_id': str(vuln.project.company.id),
+            'company_name': vuln.project.company.name,
+            'created_at': vuln.created_at.isoformat(),
+        } for vuln in recent_vulnerabilities]
+        
+        # Recent projects (last 10)
+        recent_projects = projects.order_by('-created_at')[:10]
+        recent_projects_data = [{
+            'id': str(project.id),
+            'title': project.title,
+            'status': project.status,
+            'company_id': str(project.company.id),
+            'company_name': project.company.name,
+            'start_date': project.start_date.isoformat(),
+            'end_date': project.end_date.isoformat(),
+            'vulnerability_count': project.vulnerabilities.count(),
+            'created_at': project.created_at.isoformat(),
+        } for project in recent_projects]
+        
+        # Vulnerability trend (last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        trend_data = []
+        for i in range(30):
+            date = (datetime.now() - timedelta(days=29-i)).date()
+            count = vulnerabilities.filter(
+                created_at__date=date
+            ).count()
+            trend_data.append({
+                'date': date.isoformat(),
+                'count': count
+            })
+        
+        return response.Response({
+            'total_vulnerabilities': total_vulnerabilities,
+            'total_projects': total_projects,
+            'critical_vulnerabilities': critical_vulnerabilities,
+            'recent_activity_count': recent_activity_count,
+            'severity_distribution': severity_distribution,
+            'status_distribution': status_distribution,
+            'recent_vulnerabilities': recent_vulns_data,
+            'recent_projects': recent_projects_data,
+            'vulnerability_trend': trend_data,
+        })
+
+class ReportTemplateViewSet(viewsets.ModelViewSet):
+    queryset = ReportTemplate.objects.all()
+    serializer_class = ReportTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated] # Admin only for modification?
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), IsAdmin()]
+        return [permissions.IsAuthenticated()]
+
+class GeneratedReportViewSet(viewsets.ModelViewSet):
+    queryset = GeneratedReport.objects.all()
+    serializer_class = GeneratedReportSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users see reports they created, or all if Admin? 
+        # Let's say all authenticated users can see non-private reports (we didn't implement private flag yet)
+        # But logically, you should see reports for companies/projects you have access to. 
+        # Since access is global for now, everyone sees everything.
+        return GeneratedReport.objects.all().order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    @decorators.action(detail=False, methods=['post'])
+    def generate(self, request):
+        serializer = ReportGenerationRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        template_id = serializer.validated_data['template_id']
+        project_id = serializer.validated_data.get('project_id')
+        company_id = serializer.validated_data.get('company_id')
+        output_format = serializer.validated_data['format']
+        
+        template = get_object_or_404(ReportTemplate, pk=template_id)
+        
+        # Create GeneratedReport entry
+        report_instance = GeneratedReport.objects.create(
+            template=template,
+            format=output_format,
+            created_by=request.user
+        )
+        
+        try:
+            generator = ReportGenerator()
+            context = {}
+            
+            if project_id:
+                project = get_object_or_404(Project, pk=project_id)
+                report_instance.project = project
+                context = generator.get_project_context(project)
+            elif company_id:
+                company = get_object_or_404(Company, pk=company_id)
+                report_instance.company = company
+                # TODO: Implement get_company_context in ReportGenerator
+                # context = generator.get_company_context(company)
+                context = {'company': {'name': company.name}} # Valid placeholder
+            
+            report_instance.save()
+            
+            # Generate asynchronously? For now, synchronously.
+            generator.generate_report(template, context, output_format, report_instance)
+            
+            return response.Response(
+                GeneratedReportSerializer(report_instance).data,
+                status=status.HTTP_201_CREATED
+            )
+            
+        except Exception as e:
+            # Error handling is done inside generate_report for modifying the instance,
+            # but we also catch here to return response if it bubbles up or if setup failed.
+            return response.Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

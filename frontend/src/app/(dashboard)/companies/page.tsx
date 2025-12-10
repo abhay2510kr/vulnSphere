@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -93,6 +92,9 @@ export default function CompaniesPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">All Companies</h1>
+                    <p className="text-muted-foreground">
+                        Manage and view all companies in the system.
+                    </p>
                 </div>
                 <Button onClick={() => setCreateDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -100,117 +102,108 @@ export default function CompaniesPage() {
                 </Button>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>Companies</CardTitle>
-                            <CardDescription>
-                                View and filter View and filter all companies
-                            </CardDescription>
-                        </div>
-                        <div className="relative w-64">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search companies..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-8"
-                            />
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="space-y-2">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <Skeleton key={i} className="h-12 w-full" />
-                            ))}
-                        </div>
-                    ) : error ? (
-                        <div className="text-center py-8 text-destructive">{error}</div>
-                    ) : filteredCompanies.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12">
-                            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No companies yet</h3>
-                            <p className="text-muted-foreground mb-4">
-                                {searchQuery ? 'No companies found matching your search.' : 'Create your first company to get started'}
-                            </p>
-                            {!searchQuery && (
-                                <Button onClick={() => setCreateDialogOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Company
-                                </Button>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Projects</TableHead>
-                                        <TableHead>Assets</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {paginatedCompanies.map((company) => (
-                                        <TableRow key={company.id}>
-                                            <TableCell className="font-medium">{company.name}</TableCell>
-                                            <TableCell>{company.contact_email}</TableCell>
-                                            <TableCell>
-                                                <span className="inline-flex items-center justify-center w-8 h-6 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
-                                                    {company.project_count || 0}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="inline-flex items-center justify-center w-8 h-6 rounded-md bg-purple-50 text-purple-700 text-sm font-medium">
-                                                    {company.asset_count || 0}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>
-                                                {company.is_active ? (
-                                                    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                                                        Active
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200">
-                                                        Inactive
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button variant="ghost" size="sm" asChild>
-                                                        <Link href={`/companies/${company.id}`}>
-                                                            <Eye className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleEditClick(company)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(company)}>
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <TablePagination
-                                currentPage={currentPage}
-                                totalItems={filteredCompanies.length}
-                                itemsPerPage={ITEMS_PER_PAGE}
-                                onPageChange={setCurrentPage}
-                            />
-                        </>
+            <div className="flex items-center gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search companies..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8"
+                    />
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="space-y-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                </div>
+            ) : error ? (
+                <div className="text-center py-8 text-destructive">{error}</div>
+            ) : filteredCompanies.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 border rounded-lg bg-muted/40">
+                    <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No companies yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                        {searchQuery ? 'No companies found matching your search.' : 'Create your first company to get started'}
+                    </p>
+                    {!searchQuery && (
+                        <Button onClick={() => setCreateDialogOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Company
+                        </Button>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            ) : (
+                <>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Projects</TableHead>
+                                    <TableHead>Assets</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedCompanies.map((company) => (
+                                    <TableRow key={company.id}>
+                                        <TableCell className="font-medium">{company.name}</TableCell>
+                                        <TableCell>{company.contact_email}</TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center justify-center w-8 h-6 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
+                                                {company.project_count || 0}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center justify-center w-8 h-6 rounded-md bg-purple-50 text-purple-700 text-sm font-medium">
+                                                {company.asset_count || 0}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            {company.is_active ? (
+                                                <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                                    Active
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200">
+                                                    Inactive
+                                                </span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href={`/companies/${company.id}`}>
+                                                        <Eye className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(company)}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(company)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <TablePagination
+                        currentPage={currentPage}
+                        totalItems={filteredCompanies.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setCurrentPage}
+                    />
+                </>
+            )}
 
             <CompanyCreateDialog
                 open={createDialogOpen}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -168,126 +167,122 @@ export default function VulnerabilitiesPage() {
     const filteredVulns = getFilteredVulnerabilities();
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">All Vulnerabilities</h2>
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">All Vulnerabilities</h2>
+                    <p className="text-muted-foreground">
+                        View and filter all vulnerabilities across all projects.
+                    </p>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Vulnerabilities</CardTitle>
-                    <CardDescription>View and filter all vulnerabilities across all projects</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col gap-4 mb-6">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search vulnerabilities..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="pl-8"
-                            />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Companies" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Companies</SelectItem>
-                                    {companies.map((company) => (
-                                        <SelectItem key={company.id} value={company.id.toString()}>
-                                            {company.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Severities" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Severities</SelectItem>
-                                    <SelectItem value="CRITICAL">Critical</SelectItem>
-                                    <SelectItem value="HIGH">High</SelectItem>
-                                    <SelectItem value="MEDIUM">Medium</SelectItem>
-                                    <SelectItem value="LOW">Low</SelectItem>
-                                    <SelectItem value="INFO">Informational</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Statuses" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="OPEN">Open</SelectItem>
-                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                    <SelectItem value="RESOLVED">Resolved</SelectItem>
-                                    <SelectItem value="ACCEPTED_RISK">Accepted Risk</SelectItem>
-                                    <SelectItem value="FALSE_POSITIVE">False Positive</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Company</TableHead>
-                                    <TableHead>Project</TableHead>
-                                    <TableHead>Severity</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8">
-                                            Loading...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredVulns.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                            No vulnerabilities found
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredVulns.map((vuln) => (
-                                        <TableRow key={vuln.id}>
-                                            <TableCell className="font-medium">{vuln.title}</TableCell>
-                                            <TableCell>{getCompanyName(vuln.project)}</TableCell>
-                                            <TableCell>{getProjectTitle(vuln.project)}</TableCell>
-                                            <TableCell>{getSeverityBadge(vuln.severity)}</TableCell>
-                                            <TableCell>{getStatusBadge(vuln.status)}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={`/project/${vuln.project}/vulnerabilities/${vuln.id}`}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-
-                    <TablePagination
-                        currentPage={page}
-                        totalItems={totalCount}
-                        itemsPerPage={20}
-                        onPageChange={setPage}
+            <div className="flex flex-col gap-4">
+                <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search vulnerabilities..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-8"
                     />
-                </CardContent>
-            </Card>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="All Companies" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Companies</SelectItem>
+                            {companies.map((company) => (
+                                <SelectItem key={company.id} value={company.id.toString()}>
+                                    {company.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="All Severities" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Severities</SelectItem>
+                            <SelectItem value="CRITICAL">Critical</SelectItem>
+                            <SelectItem value="HIGH">High</SelectItem>
+                            <SelectItem value="MEDIUM">Medium</SelectItem>
+                            <SelectItem value="LOW">Low</SelectItem>
+                            <SelectItem value="INFO">Informational</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="All Statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="OPEN">Open</SelectItem>
+                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                            <SelectItem value="RESOLVED">Resolved</SelectItem>
+                            <SelectItem value="ACCEPTED_RISK">Accepted Risk</SelectItem>
+                            <SelectItem value="FALSE_POSITIVE">False Positive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Company</TableHead>
+                            <TableHead>Project</TableHead>
+                            <TableHead>Severity</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center py-8">
+                                    Loading...
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredVulns.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                    No vulnerabilities found
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredVulns.map((vuln) => (
+                                <TableRow key={vuln.id}>
+                                    <TableCell className="font-medium">{vuln.title}</TableCell>
+                                    <TableCell>{getCompanyName(vuln.project)}</TableCell>
+                                    <TableCell>{getProjectTitle(vuln.project)}</TableCell>
+                                    <TableCell>{getSeverityBadge(vuln.severity)}</TableCell>
+                                    <TableCell>{getStatusBadge(vuln.status)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link href={`/project/${vuln.project}/vulnerabilities/${vuln.id}`}>
+                                                <Eye className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            <TablePagination
+                currentPage={page}
+                totalItems={totalCount}
+                itemsPerPage={20}
+                onPageChange={setPage}
+            />
         </div>
     );
 }

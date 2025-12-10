@@ -68,6 +68,12 @@ export function Sidebar({ className }: SidebarProps) {
                                 Vulnerabilities
                             </Link>
                         </Button>
+                        <Button variant={pathname === '/reports' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                            <Link href="/reports">
+                                <FileText className="mr-2 h-4 w-4" />
+                                Reports
+                            </Link>
+                        </Button>
                     </div>
                 </div>
 
@@ -117,6 +123,6 @@ export function Sidebar({ className }: SidebarProps) {
                     </Button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
