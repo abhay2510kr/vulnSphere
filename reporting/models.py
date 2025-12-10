@@ -9,6 +9,11 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError(_('The Email must be set'))
         email = self.normalize_email(email)
+        
+        # Set default username if not provided
+        if 'username' not in extra_fields:
+            extra_fields['username'] = email.split('@')[0]
+        
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -18,6 +23,7 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('role', 'ADMIN')
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError(_('Superuser must have is_staff=True.'))
@@ -28,25 +34,36 @@ class CustomUserManager(BaseUserManager):
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    class GlobalRole(models.TextChoices):
-        ADMIN = 'ADMIN', _('Global Admin')
-        NONE = 'NONE', _('Standard User')
+    
+    class Role(models.TextChoices):
+        ADMIN = 'ADMIN', _('Admin')
+        TESTER = 'TESTER', _('Tester')
+        CLIENT = 'CLIENT', _('Client')
 
-    username = None
+    # Remove inherited fields we don't need
+    first_name = None
+    last_name = None
+    
+    # Custom fields
+    username = models.CharField(_('username'), max_length=50, unique=True)
     email = models.EmailField(_('email address'), unique=True)
-    global_role = models.CharField(
+    name = models.CharField(_('name'), max_length=255)
+    role = models.CharField(
         max_length=10,
-        choices=GlobalRole.choices,
-        default=GlobalRole.NONE,
+        choices=Role.choices,
+        default=Role.CLIENT,
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['name', 'username']
     
+    # Relationships
+    companies = models.ManyToManyField('Company', related_name='users', blank=True)
+
     objects = CustomUserManager()
 
     def __str__(self):
-        return self.email
+        return f"{self.name} ({self.username})"
 
 class Company(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -65,23 +82,7 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
-class CompanyMembership(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    class Role(models.TextChoices):
-        TESTER = 'TESTER', _('Tester')
-        CLIENT = 'CLIENT', _('Client')
-
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='memberships')
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='memberships')
-    role = models.CharField(max_length=20, choices=Role.choices)
-    is_active = models.BooleanField(default=True)
-    title = models.CharField(max_length=100, blank=True)
-    
-    class Meta:
-        unique_together = ('user', 'company', 'role')
-
-    def __str__(self):
-        return f"{self.user} - {self.company} ({self.role})"
+# CompanyMembership model removed - users now have global roles
 
 class Asset(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -113,25 +114,25 @@ class Asset(models.Model):
     def __str__(self):
         return f"{self.name} ({self.company.name})"
 
-class ReportAsset(models.Model):
+class ProjectAsset(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     """
-    Through model to track which assets are attached to which reports.
+    Through model to track which assets are attached to which projects.
     Assets can be auto-attached when referenced by a vulnerability or manually attached.
     """
-    report = models.ForeignKey('Report', on_delete=models.CASCADE)
+    project = models.ForeignKey('Project', on_delete=models.CASCADE)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     auto_attached = models.BooleanField(default=False, help_text="Whether this was auto-attached via vulnerability")
     attached_at = models.DateTimeField(auto_now_add=True)
     attached_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     
     class Meta:
-        unique_together = ('report', 'asset')
+        unique_together = ('project', 'asset')
     
     def __str__(self):
-        return f"{self.asset.name} -> {self.report.title}"
+        return f"{self.asset.name} -> {self.project.title}"
 
-class Report(models.Model):
+class Project(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', 'Draft'
@@ -139,7 +140,7 @@ class Report(models.Model):
         FINAL = 'FINAL', 'Final'
         ARCHIVED = 'ARCHIVED', 'Archived'
 
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='reports')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='projects')
     title = models.CharField(max_length=255)
     engagement_type = models.CharField(max_length=100)
     summary = models.TextField(blank=True)
@@ -147,9 +148,9 @@ class Report(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='authored_reports')
-    last_edited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='edited_reports')
-    assets = models.ManyToManyField(Asset, through='ReportAsset', related_name='reports')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='authored_projects')
+    last_edited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='edited_projects')
+    assets = models.ManyToManyField(Asset, through='ProjectAsset', related_name='projects')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -174,7 +175,7 @@ class Vulnerability(models.Model):
         RETEST_PENDING = 'RETEST_PENDING', 'Retest Pending'
         RETEST_FAILED = 'RETEST_FAILED', 'Retest Failed'
 
-    report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name='vulnerabilities')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='vulnerabilities')
     title = models.CharField(max_length=255)
     severity = models.CharField(max_length=20, choices=Severity.choices)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
@@ -190,7 +191,7 @@ class Vulnerability(models.Model):
 
     @property
     def company(self):
-        return self.report.company
+        return self.project.company
 
     def __str__(self):
         return self.title
@@ -203,23 +204,34 @@ class VulnerabilityAsset(models.Model):
 
 class Retest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
     class Status(models.TextChoices):
         PASSED = 'PASSED', 'Passed (Fixed)'
         FAILED = 'FAILED', 'Failed (Still Vulnerable)'
         PARTIAL = 'PARTIAL', 'Partial'
+    
+    class RequestType(models.TextChoices):
+        INITIAL = 'INITIAL', 'Initial Finding'
+        REQUEST = 'REQUEST', 'Retest Requested'
+        RETEST = 'RETEST', 'Retest Completed'
 
     vulnerability = models.ForeignKey(Vulnerability, on_delete=models.CASCADE, related_name='retests')
     retest_date = models.DateField(auto_now_add=True)
-    performed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    status = models.CharField(max_length=20, choices=Status.choices)
+    performed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='retests_performed')
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='retests_requested')
+    request_type = models.CharField(max_length=10, choices=RequestType.choices, default=RequestType.INITIAL)
+    status = models.CharField(max_length=20, choices=Status.choices, null=True, blank=True)
     notes_md = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.get_request_type_display()} - {self.vulnerability.title}"
 
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    report = models.ForeignKey(Report, on_delete=models.CASCADE, null=True, blank=True, related_name='comments')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True, related_name='comments')
     vulnerability = models.ForeignKey(Vulnerability, on_delete=models.CASCADE, null=True, blank=True, related_name='comments')
     retest = models.ForeignKey(Retest, on_delete=models.CASCADE, null=True, blank=True, related_name='comments')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -230,7 +242,7 @@ class Comment(models.Model):
 
 class Attachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    report = models.ForeignKey(Report, on_delete=models.CASCADE, null=True, blank=True, related_name='attachments')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True, related_name='attachments')
     vulnerability = models.ForeignKey(Vulnerability, on_delete=models.CASCADE, null=True, blank=True, related_name='attachments')
     file = models.FileField(upload_to='attachments/')
     file_name = models.CharField(max_length=255)

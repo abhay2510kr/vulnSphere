@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import api from '@/lib/api';
 
-interface Report {
+interface Project {
     id: string;
     company: string;
     title: string;
@@ -25,14 +25,14 @@ interface Report {
     summary: string;
 }
 
-interface ReportEditDialogProps {
-    report: Report | null;
+interface ProjectEditDialogProps {
+    project: Project | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }
 
-export function ReportEditDialog({ report, open, onOpenChange, onSuccess }: ReportEditDialogProps) {
+export function ProjectEditDialog({ project, open, onOpenChange, onSuccess }: ProjectEditDialogProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
@@ -44,32 +44,32 @@ export function ReportEditDialog({ report, open, onOpenChange, onSuccess }: Repo
     });
 
     useEffect(() => {
-        if (report) {
+        if (project) {
             setFormData({
-                title: report.title,
-                engagement_type: report.engagement_type,
-                start_date: report.start_date,
-                end_date: report.end_date,
-                summary: report.summary || '',
+                title: project.title,
+                engagement_type: project.engagement_type,
+                start_date: project.start_date,
+                end_date: project.end_date,
+                summary: project.summary || '',
             });
         }
-    }, [report]);
+    }, [project]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!report) return;
+        if (!project) return;
 
         setLoading(true);
         setError('');
 
         try {
-            await api.patch(`/companies/${report.company}/reports/${report.id}/`, formData);
+            await api.patch(`/companies/${project.company}/projects/${project.id}/`, formData);
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
             const errorMessage = err.response?.data?.detail ||
                 err.response?.data?.title?.[0] ||
-                'Failed to update report';
+                'Failed to update project';
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -81,8 +81,8 @@ export function ReportEditDialog({ report, open, onOpenChange, onSuccess }: Repo
             <DialogContent className="sm:max-w-[600px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>Edit Report</DialogTitle>
-                        <DialogDescription>Update report information</DialogDescription>
+                        <DialogTitle>Edit Project</DialogTitle>
+                        <DialogDescription>Update project information</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         {error && (
@@ -91,7 +91,7 @@ export function ReportEditDialog({ report, open, onOpenChange, onSuccess }: Repo
                             </Alert>
                         )}
                         <div className="grid gap-2">
-                            <Label htmlFor="edit-title">Report Title *</Label>
+                            <Label htmlFor="edit-title">Project Title *</Label>
                             <Input
                                 id="edit-title"
                                 required
@@ -136,7 +136,7 @@ export function ReportEditDialog({ report, open, onOpenChange, onSuccess }: Repo
                             Cancel
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? 'Updating...' : 'Update Report'}
+                            {loading ? 'Updating...' : 'Update Project'}
                         </Button>
                     </DialogFooter>
                 </form>

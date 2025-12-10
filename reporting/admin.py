@@ -1,16 +1,16 @@
 from django.contrib import admin
 from .models import (
-    User, Company, CompanyMembership, Asset, Report, 
+    User, Company, Asset, Project, 
     Vulnerability, VulnerabilityAsset, Retest, 
-    Comment, Attachment, ActivityLog, ReportAsset
+    Comment, Attachment, ActivityLog, ProjectAsset
 )
 
 # Register your models here.
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'global_role', 'is_active')
-    list_filter = ('global_role', 'is_active')
-    search_fields = ('email', 'first_name', 'last_name')
+    list_display = ('email', 'username', 'name', 'role', 'is_active')
+    list_filter = ('role', 'is_active')
+    search_fields = ('email', 'username', 'name')
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
@@ -18,11 +18,7 @@ class CompanyAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug', 'contact_email')
     list_filter = ('is_active', 'created_at')
 
-@admin.register(CompanyMembership)
-class CompanyMembershipAdmin(admin.ModelAdmin):
-    list_display = ('user', 'company', 'role', 'is_active')
-    list_filter = ('role', 'is_active', 'company')
-    search_fields = ('user__email', 'company__name')
+# CompanyMembership admin removed - users now have global roles
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
@@ -30,33 +26,33 @@ class AssetAdmin(admin.ModelAdmin):
     list_filter = ('type', 'environment', 'is_active', 'company')
     search_fields = ('name', 'identifier')
 
-@admin.register(Report)
-class ReportAdmin(admin.ModelAdmin):
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
     list_display = ('title', 'company', 'engagement_type', 'status', 'start_date', 'end_date')
     list_filter = ('status', 'company')
     search_fields = ('title', 'company__name')
 
 @admin.register(Vulnerability)
 class VulnerabilityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'report', 'severity', 'status', 'created_at')
-    list_filter = ('severity', 'status', 'report__company')
-    search_fields = ('title', 'report__title')
+    list_display = ('title', 'project', 'severity', 'status', 'created_at')
+    list_filter = ('severity', 'status', 'project__company')
+    search_fields = ('title', 'project__title')
 
 @admin.register(VulnerabilityAsset)
 class VulnerabilityAssetAdmin(admin.ModelAdmin):
     list_display = ('vulnerability', 'asset')
     search_fields = ('vulnerability__title', 'asset__name')
 
-@admin.register(ReportAsset)
-class ReportAssetAdmin(admin.ModelAdmin):
-    list_display = ('report', 'asset', 'auto_attached', 'attached_at')
+@admin.register(ProjectAsset)
+class ProjectAssetAdmin(admin.ModelAdmin):
+    list_display = ('project', 'asset', 'auto_attached', 'attached_at')
     list_filter = ('auto_attached',)
-    search_fields = ('report__title', 'asset__name')
+    search_fields = ('project__title', 'asset__name')
 
 @admin.register(Retest)
 class RetestAdmin(admin.ModelAdmin):
-    list_display = ('vulnerability', 'status', 'retest_date', 'performed_by')
-    list_filter = ('status', 'retest_date')
+    list_display = ('vulnerability', 'request_type', 'status', 'retest_date', 'performed_by', 'requested_by')
+    list_filter = ('request_type', 'status', 'retest_date')
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
@@ -65,7 +61,7 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ('file_name', 'uploaded_by', 'uploaded_at', 'report', 'vulnerability')
+    list_display = ('file_name', 'uploaded_by', 'uploaded_at', 'project', 'vulnerability')
     list_filter = ('uploaded_at',)
 
 @admin.register(ActivityLog)

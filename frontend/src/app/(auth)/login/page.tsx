@@ -85,9 +85,7 @@ export default function LoginPage() {
             <Card className="w-full max-w-sm">
                 <CardHeader>
                     <CardTitle className="text-2xl">Login</CardTitle>
-                    <CardDescription>
-                        Enter your email below to login to your account.
-                    </CardDescription>
+                    <CardDescription>Enter your email or username and password to access your account</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleLogin}>
                     <CardContent className="grid gap-4">
@@ -97,12 +95,11 @@ export default function LoginPage() {
                             </Alert>
                         )}
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">Email or Username</Label>
                             <Input
                                 id="email"
-                                type="email"
-                                placeholder="m@example.com"
                                 required
+                                placeholder="email@example.com or username"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />

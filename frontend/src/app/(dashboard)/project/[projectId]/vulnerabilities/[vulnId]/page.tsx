@@ -25,7 +25,7 @@ interface Vulnerability {
 export default function VulnerabilityViewPage() {
     const params = useParams();
     const router = useRouter();
-    const reportId = params.reportId as string;
+    const projectId = params.projectId as string;
     const vulnId = params.vulnId as string;
 
     const [vulnerability, setVulnerability] = useState<Vulnerability | null>(null);
@@ -36,13 +36,13 @@ export default function VulnerabilityViewPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch report to get company ID
-                const reportRes = await api.get(`/reports/${reportId}/`);
-                setCompanyId(reportRes.data.company);
+                // Fetch project to get company ID
+                const projectRes = await api.get(`/projects/${projectId}/`);
+                setCompanyId(projectRes.data.company);
 
                 // Fetch vulnerability
                 const vulnRes = await api.get(
-                    `/companies/${reportRes.data.company}/reports/${reportId}/vulnerabilities/${vulnId}/`
+                    `/companies/${projectRes.data.company}/projects/${projectId}/vulnerabilities/${vulnId}/`
                 );
                 setVulnerability(vulnRes.data);
             } catch (err) {
@@ -54,7 +54,7 @@ export default function VulnerabilityViewPage() {
         };
 
         fetchData();
-    }, [reportId, vulnId]);
+    }, [projectId, vulnId]);
 
     const getSeverityBadge = (severity: string) => {
         const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
@@ -114,7 +114,7 @@ export default function VulnerabilityViewPage() {
                         <h1 className="text-3xl font-bold tracking-tight">{vulnerability.title}</h1>
                     </div>
                 </div>
-                <Button onClick={() => router.push(`/reports/${reportId}/vulnerabilities/${vulnId}/edit`)}>
+                <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/${vulnId}/edit`)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit
                 </Button>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Eye } from 'lucide-react';
+import { Search, Eye } from 'lucide-react';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 import { TablePagination } from '@/components/ui/table-pagination';
@@ -18,7 +18,7 @@ interface Company {
     slug: string;
 }
 
-interface Report {
+interface Project {
     id: string;
     title: string;
     company: string;
@@ -29,8 +29,8 @@ interface Report {
     created_at: string;
 }
 
-export default function ReportsPage() {
-    const [reports, setReports] = useState<Report[]>([]);
+export default function ProjectsPage() {
+    const [projects, setProjects] = useState<Project[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -59,24 +59,24 @@ export default function ReportsPage() {
             const params = new URLSearchParams({ page: page.toString() });
             if (search) params.append('search', search);
 
-            // Fetch reports
-            const reportsRes = await fetch(`http://localhost:8000/api/v1/reports/?${params}`, {
+            // Fetch projects
+            const projectsRes = await fetch(`http://localhost:8000/api/v1/projects/?${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const reportsData = await reportsRes.json();
+            const projectsData = await projectsRes.json();
 
-            let filteredReports = reportsData.results || reportsData;
+            let filteredProjects = projectsData.results || projectsData;
 
             // Client-side filtering for company and status
             if (selectedCompany !== 'all') {
-                filteredReports = filteredReports.filter((r: Report) => r.company.toString() === selectedCompany);
+                filteredProjects = filteredProjects.filter((p: Project) => p.company.toString() === selectedCompany);
             }
             if (selectedStatus !== 'all') {
-                filteredReports = filteredReports.filter((r: Report) => r.status === selectedStatus);
+                filteredProjects = filteredProjects.filter((p: Project) => p.status === selectedStatus);
             }
 
-            setReports(filteredReports);
-            setTotalCount(reportsData.count || filteredReports.length);
+            setProjects(filteredProjects);
+            setTotalCount(projectsData.count || filteredProjects.length);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -101,20 +101,20 @@ export default function ReportsPage() {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">All Reports</h2>
+                <h2 className="text-3xl font-bold tracking-tight">All Projects</h2>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Reports</CardTitle>
-                    <CardDescription>View and filter all reports across companies</CardDescription>
+                    <CardTitle>Projects</CardTitle>
+                    <CardDescription>View and filter all projects across companies</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
                         <div className="relative flex-1">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Search reports..."
+                                placeholder="Search projects..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="pl-8"
@@ -167,24 +167,24 @@ export default function ReportsPage() {
                                             Loading...
                                         </TableCell>
                                     </TableRow>
-                                ) : reports.length === 0 ? (
+                                ) : projects.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                            No reports found
+                                            No projects found
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    reports.map((report) => (
-                                        <TableRow key={report.id}>
-                                            <TableCell className="font-medium">{report.title}</TableCell>
-                                            <TableCell>{getCompanyName(report.company)}</TableCell>
-                                            <TableCell>{report.engagement_type}</TableCell>
-                                            <TableCell>{getStatusBadge(report.status)}</TableCell>
-                                            <TableCell>{new Date(report.start_date).toLocaleDateString()}</TableCell>
-                                            <TableCell>{new Date(report.end_date).toLocaleDateString()}</TableCell>
+                                    projects.map((project) => (
+                                        <TableRow key={project.id}>
+                                            <TableCell className="font-medium">{project.title}</TableCell>
+                                            <TableCell>{getCompanyName(project.company)}</TableCell>
+                                            <TableCell>{project.engagement_type}</TableCell>
+                                            <TableCell>{getStatusBadge(project.status)}</TableCell>
+                                            <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
+                                            <TableCell>{new Date(project.end_date).toLocaleDateString()}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={`/reports/${report.id}`}>
+                                                    <Link href={`/project/${project.id}`}>
                                                         <Eye className="h-4 w-4" />
                                                     </Link>
                                                 </Button>

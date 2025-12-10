@@ -56,10 +56,10 @@ export function Sidebar({ className }: SidebarProps) {
                                 Companies
                             </Link>
                         </Button>
-                        <Button variant={pathname === '/reports' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
-                            <Link href="/reports">
+                        <Button variant={pathname === '/projects' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                            <Link href="/projects">
                                 <FileText className="mr-2 h-4 w-4" />
-                                Reports
+                                Projects
                             </Link>
                         </Button>
                         <Button variant={pathname === '/vulnerabilities' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>

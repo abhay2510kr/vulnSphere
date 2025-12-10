@@ -10,9 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ReportCreateDialog } from '@/components/reports/report-create-dialog';
-import { ReportEditDialog } from '@/components/reports/report-edit-dialog';
-import { ReportDeleteDialog } from '@/components/reports/report-delete-dialog';
+import { ProjectCreateDialog } from '@/components/projects/project-create-dialog';
+import { ProjectEditDialog } from '@/components/projects/project-edit-dialog';
+import { ProjectDeleteDialog } from '@/components/projects/project-delete-dialog';
 import { AssetCreateDialog } from '@/components/assets/asset-create-dialog';
 import { AssetEditDialog } from '@/components/assets/asset-edit-dialog';
 import { AssetDeleteDialog } from '@/components/assets/asset-delete-dialog';
@@ -32,7 +32,7 @@ interface Company {
     created_at: string;
 }
 
-interface Report {
+interface Project {
     id: string;
     company: string;
     title: string;
@@ -60,16 +60,16 @@ export default function CompanyDetailPage() {
     const companyId = params.companyId as string;
 
     const [company, setCompany] = useState<Company | null>(null);
-    const [reports, setReports] = useState<Report[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [assets, setAssets] = useState<Asset[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const [reportDialogOpen, setReportDialogOpen] = useState(false);
-    const [reportEditDialogOpen, setReportEditDialogOpen] = useState(false);
-    const [reportDeleteDialogOpen, setReportDeleteDialogOpen] = useState(false);
-    const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-    const [reportPage, setReportPage] = useState(1);
+    const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+    const [projectEditDialogOpen, setProjectEditDialogOpen] = useState(false);
+    const [projectDeleteDialogOpen, setProjectDeleteDialogOpen] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+    const [projectPage, setProjectPage] = useState(1);
 
     const [assetDialogOpen, setAssetDialogOpen] = useState(false);
     const [assetEditDialogOpen, setAssetEditDialogOpen] = useState(false);
@@ -78,19 +78,19 @@ export default function CompanyDetailPage() {
     const [assetPage, setAssetPage] = useState(1);
 
     // Tab state
-    const [activeTab, setActiveTab] = useState('reports');
+    const [activeTab, setActiveTab] = useState('projects');
 
     const fetchCompanyData = async () => {
         try {
             setLoading(true);
-            const [companyRes, reportsRes, assetsRes] = await Promise.all([
+            const [companyRes, projectsRes, assetsRes] = await Promise.all([
                 api.get(`/companies/${companyId}/`),
-                api.get(`/companies/${companyId}/reports/`),
+                api.get(`/companies/${companyId}/projects/`),
                 api.get(`/companies/${companyId}/assets/`),
             ]);
 
             setCompany(companyRes.data);
-            setReports(reportsRes.data.results || reportsRes.data);
+            setProjects(projectsRes.data.results || projectsRes.data);
             setAssets(assetsRes.data.results || assetsRes.data);
         } catch (err: any) {
             console.error("Failed to fetch company data", err);
@@ -104,14 +104,14 @@ export default function CompanyDetailPage() {
         fetchCompanyData();
     }, [companyId]);
 
-    const handleReportEdit = (report: Report) => {
-        setSelectedReport(report);
-        setReportEditDialogOpen(true);
+    const handleProjectEdit = (project: Project) => {
+        setSelectedProject(project);
+        setProjectEditDialogOpen(true);
     };
 
-    const handleReportDelete = (report: Report) => {
-        setSelectedReport(report);
-        setReportDeleteDialogOpen(true);
+    const handleProjectDelete = (project: Project) => {
+        setSelectedProject(project);
+        setProjectDeleteDialogOpen(true);
     };
 
     const handleAssetEdit = (asset: Asset) => {
@@ -157,8 +157,8 @@ export default function CompanyDetailPage() {
     }
 
     // Pagination logic
-    const reportStartIndex = (reportPage - 1) * ITEMS_PER_PAGE;
-    const paginatedReports = reports.slice(reportStartIndex, reportStartIndex + ITEMS_PER_PAGE);
+    const projectStartIndex = (projectPage - 1) * ITEMS_PER_PAGE;
+    const paginatedProjects = projects.slice(projectStartIndex, projectStartIndex + ITEMS_PER_PAGE);
 
     const assetStartIndex = (assetPage - 1) * ITEMS_PER_PAGE;
     const paginatedAssets = assets.slice(assetStartIndex, assetStartIndex + ITEMS_PER_PAGE);
@@ -208,28 +208,28 @@ export default function CompanyDetailPage() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList>
-                    <TabsTrigger value="reports">Reports ({reports.length})</TabsTrigger>
+                    <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
                     <TabsTrigger value="assets">Assets ({assets.length})</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="reports" className="space-y-4">
+                <TabsContent value="projects" className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-semibold">Reports</h2>
-                        <Button onClick={() => setReportDialogOpen(true)}>
+                        <h2 className="text-xl font-semibold">Projects</h2>
+                        <Button onClick={() => setProjectDialogOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            New Report
+                            New Project
                         </Button>
                     </div>
 
-                    {reports.length === 0 ? (
+                    {projects.length === 0 ? (
                         <Card>
                             <CardContent className="flex flex-col items-center justify-center py-12">
                                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-semibold mb-2">No reports yet</h3>
-                                <p className="text-muted-foreground mb-4">Create your first report to get started</p>
-                                <Button onClick={() => setReportDialogOpen(true)}>
+                                <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+                                <p className="text-muted-foreground mb-4">Create your first project to get started</p>
+                                <Button onClick={() => setProjectDialogOpen(true)}>
                                     <Plus className="mr-2 h-4 w-4" />
-                                    New Report
+                                    New Project
                                 </Button>
                             </CardContent>
                         </Card>
@@ -247,29 +247,29 @@ export default function CompanyDetailPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {paginatedReports.map((report) => (
-                                            <TableRow key={report.id}>
-                                                <TableCell className="font-medium">{report.title}</TableCell>
-                                                <TableCell>{report.engagement_type}</TableCell>
+                                        {paginatedProjects.map((project) => (
+                                            <TableRow key={project.id}>
+                                                <TableCell className="font-medium">{project.title}</TableCell>
+                                                <TableCell>{project.engagement_type}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={getStatusColor(report.status)}>
-                                                        {report.status.replace('_', ' ')}
+                                                    <Badge variant={getStatusColor(project.status)}>
+                                                        {project.status.replace('_', ' ')}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
-                                                    {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
+                                                    {new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-2">
                                                         <Button variant="ghost" size="sm" asChild>
-                                                            <Link href={`/reports/${report.id}`}>
+                                                            <Link href={`/project/${project.id}`}>
                                                                 <Eye className="h-4 w-4" />
                                                             </Link>
                                                         </Button>
-                                                        <Button variant="ghost" size="sm" onClick={() => handleReportEdit(report)}>
+                                                        <Button variant="ghost" size="sm" onClick={() => handleProjectEdit(project)}>
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="sm" onClick={() => handleReportDelete(report)}>
+                                                        <Button variant="ghost" size="sm" onClick={() => handleProjectDelete(project)}>
                                                             <Trash2 className="h-4 w-4 text-destructive" />
                                                         </Button>
                                                     </div>
@@ -279,10 +279,10 @@ export default function CompanyDetailPage() {
                                     </TableBody>
                                 </Table>
                                 <TablePagination
-                                    currentPage={reportPage}
-                                    totalItems={reports.length}
+                                    currentPage={projectPage}
+                                    totalItems={projects.length}
                                     itemsPerPage={ITEMS_PER_PAGE}
-                                    onPageChange={setReportPage}
+                                    onPageChange={setProjectPage}
                                 />
                             </CardContent>
                         </Card>
@@ -370,24 +370,24 @@ export default function CompanyDetailPage() {
                 </TabsContent>
             </Tabs>
 
-            <ReportCreateDialog
+            <ProjectCreateDialog
                 companyId={companyId}
-                open={reportDialogOpen}
-                onOpenChange={setReportDialogOpen}
+                open={projectDialogOpen}
+                onOpenChange={setProjectDialogOpen}
                 onSuccess={fetchCompanyData}
             />
 
-            <ReportEditDialog
-                report={selectedReport}
-                open={reportEditDialogOpen}
-                onOpenChange={setReportEditDialogOpen}
+            <ProjectEditDialog
+                project={selectedProject}
+                open={projectEditDialogOpen}
+                onOpenChange={setProjectEditDialogOpen}
                 onSuccess={fetchCompanyData}
             />
 
-            <ReportDeleteDialog
-                report={selectedReport}
-                open={reportDeleteDialogOpen}
-                onOpenChange={setReportDeleteDialogOpen}
+            <ProjectDeleteDialog
+                project={selectedProject}
+                open={projectDeleteDialogOpen}
+                onOpenChange={setProjectDeleteDialogOpen}
                 onSuccess={fetchCompanyData}
             />
 

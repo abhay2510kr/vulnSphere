@@ -20,7 +20,7 @@ import ReactMarkdown from 'react-markdown';
 
 const ITEMS_PER_PAGE = 10;
 
-interface Report {
+interface Project {
     id: string;
     title: string;
     engagement_type: string;
@@ -51,12 +51,12 @@ interface Asset {
     is_active: boolean;
 }
 
-export default function ReportDetailPage() {
+export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const reportId = params.reportId as string;
+    const projectId = params.projectId as string;
 
-    const [report, setReport] = useState<Report | null>(null);
+    const [project, setProject] = useState<Project | null>(null);
     const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
     const [assets, setAssets] = useState<Asset[]>([]);
     const [allAssets, setAllAssets] = useState<Asset[]>([]);
@@ -80,36 +80,36 @@ export default function ReportDetailPage() {
     // Tab state
     const [activeTab, setActiveTab] = useState('vulnerabilities');
 
-    const fetchReportData = async () => {
+    const fetchProjectData = async () => {
         try {
             setLoading(true);
-            const reportRes = await api.get(`/reports/${reportId}/`);
-            setReport(reportRes.data);
+            const projectRes = await api.get(`/projects/${projectId}/`);
+            setProject(projectRes.data);
 
-            const companyId = reportRes.data.company;
+            const companyId = projectRes.data.company;
 
             // Fetch vulnerabilities
-            const vulnRes = await api.get(`/companies/${companyId}/reports/${reportId}/vulnerabilities/`);
+            const vulnRes = await api.get(`/companies/${companyId}/projects/${projectId}/vulnerabilities/`);
             setVulnerabilities(vulnRes.data.results || vulnRes.data || []);
 
-            // Fetch report assets (attached)
-            const assetRes = await api.get(`/companies/${companyId}/reports/${reportId}/assets/`);
+            // Fetch project assets (attached)
+            const assetRes = await api.get(`/companies/${companyId}/projects/${projectId}/assets/`);
             setAssets(assetRes.data.results || assetRes.data || []);
 
             // Fetch all company assets
             const allAssetsRes = await api.get(`/companies/${companyId}/assets/`);
             setAllAssets(allAssetsRes.data.results || allAssetsRes.data || []);
         } catch (err: any) {
-            console.error('Failed to fetch report data', err);
-            setError('Failed to load report');
+            console.error('Failed to fetch project data', err);
+            setError('Failed to load project');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchReportData();
-    }, [reportId]);
+        fetchProjectData();
+    }, [projectId]);
 
     // Filter vulnerabilities
     const filteredVulnerabilities = vulnerabilities.filter(vuln => {
@@ -139,20 +139,20 @@ export default function ReportDetailPage() {
     const paginatedAssets = filteredAssets.slice(assetStartIndex, assetStartIndex + ITEMS_PER_PAGE);
 
     const handleAttachAsset = async (assetId: string) => {
-        if (!report) return;
+        if (!project) return;
         try {
-            await api.post(`/companies/${report.company}/reports/${reportId}/assets/`, { assetId });
-            await fetchReportData();
+            await api.post(`/companies/${project.company}/projects/${projectId}/assets/`, { assetId });
+            await fetchProjectData();
         } catch (err) {
             console.error('Failed to attach asset', err);
         }
     };
 
     const handleDetachAsset = async (assetId: string) => {
-        if (!report) return;
+        if (!project) return;
         try {
-            await api.delete(`/companies/${report.company}/reports/${reportId}/assets/${assetId}/`);
-            await fetchReportData();
+            await api.delete(`/companies/${project.company}/projects/${projectId}/assets/${assetId}/`);
+            await fetchProjectData();
         } catch (err) {
             console.error('Failed to detach asset', err);
         }
@@ -192,7 +192,7 @@ export default function ReportDetailPage() {
         );
     }
 
-    if (loading || !report) {
+    if (loading || !project) {
         return (
             <div className="space-y-6">
                 <Skeleton className="h-12 w-full" />
@@ -213,20 +213,20 @@ export default function ReportDetailPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.push(`/companies/${report.company}`)}>
+                    <Button variant="ghost" size="icon" onClick={() => router.push(`/companies/${project.company}`)}>
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{report.title}</h1>
-                        <p className="text-muted-foreground">{report.engagement_type}</p>
+                        <h1 className="text-3xl font-bold tracking-tight">{project.title}</h1>
+                        <p className="text-muted-foreground">{project.engagement_type}</p>
                     </div>
                 </div>
                 <Button variant="outline" onClick={() => {
-                    // TODO: Implement report edit dialog
-                    alert('Report edit dialog coming soon');
+                    // TODO: Implement project edit dialog
+                    alert('Project edit dialog coming soon');
                 }}>
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit Report
+                    Edit Project
                 </Button>
             </div>
 
@@ -234,20 +234,20 @@ export default function ReportDetailPage() {
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Report Details</CardTitle>
+                            <CardTitle>Project Details</CardTitle>
                             <CardDescription>
-                                {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
+                                {new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}
                             </CardDescription>
                         </div>
-                        <Badge variant={getStatusColor(report.status)}>
-                            {report.status.replace('_', ' ')}
+                        <Badge variant={getStatusColor(project.status)}>
+                            {project.status.replace('_', ' ')}
                         </Badge>
                     </div>
                 </CardHeader>
-                {report.summary && (
+                {project.summary && (
                     <CardContent>
                         <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown>{report.summary}</ReactMarkdown>
+                            <ReactMarkdown>{project.summary}</ReactMarkdown>
                         </div>
                     </CardContent>
                 )}
@@ -267,7 +267,7 @@ export default function ReportDetailPage() {
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <CardTitle>Vulnerabilities</CardTitle>
-                                <Button onClick={() => router.push(`/reports/${reportId}/vulnerabilities/new`)}>
+                                <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
                                     <Plus className="mr-2 h-4 w-4" />
                                     Add Vulnerability
                                 </Button>
@@ -325,7 +325,7 @@ export default function ReportDetailPage() {
                                             : 'Add your first vulnerability to get started'}
                                     </p>
                                     {!(vulnSearchQuery || vulnSeverityFilter !== 'ALL' || vulnStatusFilter !== 'ALL') && (
-                                        <Button onClick={() => router.push(`/reports/${reportId}/vulnerabilities/new`)}>
+                                        <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
                                             <Plus className="mr-2 h-4 w-4" />
                                             Add Vulnerability
                                         </Button>
@@ -361,12 +361,12 @@ export default function ReportDetailPage() {
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end gap-2">
                                                             <Button variant="ghost" size="sm" asChild>
-                                                                <Link href={`/reports/${reportId}/vulnerabilities/${vuln.id}`}>
+                                                                <Link href={`/project/${projectId}/vulnerabilities/${vuln.id}`}>
                                                                     <Eye className="h-4 w-4" />
                                                                 </Link>
                                                             </Button>
                                                             <Button variant="ghost" size="sm" asChild>
-                                                                <Link href={`/reports/${reportId}/vulnerabilities/${vuln.id}/edit`}>
+                                                                <Link href={`/project/${projectId}/vulnerabilities/${vuln.id}/edit`}>
                                                                     <Pencil className="h-4 w-4" />
                                                                 </Link>
                                                             </Button>
@@ -411,8 +411,8 @@ export default function ReportDetailPage() {
                 <TabsContent value="assets" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Report Assets</CardTitle>
-                            <CardDescription>Manage assets associated with this report</CardDescription>
+                            <CardTitle>Project Assets</CardTitle>
+                            <CardDescription>Manage assets associated with this project</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex gap-4">
@@ -508,20 +508,20 @@ export default function ReportDetailPage() {
 
             <VulnerabilityDeleteDialog
                 vulnerability={selectedVuln}
-                reportId={reportId}
-                companyId={report.company}
+                projectId={projectId}
+                companyId={project.company}
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
-                onSuccess={fetchReportData}
+                onSuccess={fetchProjectData}
             />
 
             <VulnerabilityCloneDialog
                 vulnerability={selectedVuln}
-                reportId={reportId}
-                companyId={report.company}
+                projectId={projectId}
+                companyId={project.company}
                 open={cloneDialogOpen}
                 onOpenChange={setCloneDialogOpen}
-                onSuccess={fetchReportData}
+                onSuccess={fetchProjectData}
             />
         </div>
     );

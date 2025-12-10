@@ -6,13 +6,13 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { SeverityChart } from '@/components/dashboard/severity-chart';
 import { TrendChart } from '@/components/dashboard/trend-chart';
 import { RecentVulnerabilities } from '@/components/dashboard/recent-vulnerabilities';
-import { RecentReports } from '@/components/dashboard/recent-reports';
+import { RecentProjects } from '@/components/dashboard/recent-projects';
 import { Bug, FileText, AlertTriangle, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DashboardStats {
     total_vulnerabilities: number;
-    total_reports: number;
+    total_projects: number;
     critical_vulnerabilities: number;
     recent_activity_count: number;
     severity_distribution: {
@@ -30,7 +30,7 @@ interface DashboardStats {
         false_positive: number;
     };
     recent_vulnerabilities: any[];
-    recent_reports: any[];
+    recent_projects: any[];
     vulnerability_trend: {
         date: string;
         count: number;
@@ -80,8 +80,8 @@ export default function DashboardPage() {
                     iconColor="text-red-500"
                 />
                 <StatCard
-                    title="Total Reports"
-                    value={stats?.total_reports ?? 0}
+                    title="Total Projects"
+                    value={stats?.total_projects ?? 0}
                     icon={FileText}
                     loading={loading}
                     iconColor="text-blue-500"
@@ -124,7 +124,7 @@ export default function DashboardPage() {
             ) : stats ? (
                 <div className="space-y-6">
                     <RecentVulnerabilities vulnerabilities={stats.recent_vulnerabilities} />
-                    <RecentReports reports={stats.recent_reports} />
+                    <RecentProjects projects={stats.recent_projects} />
                 </div>
             ) : null}
         </div>

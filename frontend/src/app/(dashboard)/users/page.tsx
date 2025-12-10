@@ -54,8 +54,8 @@ export default function UsersPage() {
             const query = searchQuery.toLowerCase();
             setFilteredUsers(users.filter(user =>
                 user.email.toLowerCase().includes(query) ||
-                user.first_name.toLowerCase().includes(query) ||
-                user.last_name.toLowerCase().includes(query)
+                user.username.toLowerCase().includes(query) ||
+                user.name.toLowerCase().includes(query)
             ));
         } else {
             setFilteredUsers(users);
@@ -84,7 +84,6 @@ export default function UsersPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
-                    <p className="text-muted-foreground">Manage user accounts and permissions</p>
                 </div>
                 <Button onClick={() => setCreateDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -131,6 +130,7 @@ export default function UsersPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Name</TableHead>
+                                        <TableHead>Username</TableHead>
                                         <TableHead>Email</TableHead>
                                         <TableHead>Role</TableHead>
                                         <TableHead>Status</TableHead>
@@ -141,14 +141,19 @@ export default function UsersPage() {
                                     {paginatedUsers.map((user) => (
                                         <TableRow key={user.id}>
                                             <TableCell className="font-medium">
-                                                {getUserFullName(user)}
+                                                {user.name}
+                                            </TableCell>
+                                            <TableCell>
+                                                <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{user.username}</code>
                                             </TableCell>
                                             <TableCell>{user.email}</TableCell>
                                             <TableCell>
-                                                {user.global_role === 'ADMIN' ? (
+                                                {user.role === 'ADMIN' ? (
                                                     <Badge variant="default">Admin</Badge>
+                                                ) : user.role === 'TESTER' ? (
+                                                    <Badge variant="secondary">Tester</Badge>
                                                 ) : (
-                                                    <Badge variant="secondary">User</Badge>
+                                                    <Badge variant="outline">Client</Badge>
                                                 )}
                                             </TableCell>
                                             <TableCell>

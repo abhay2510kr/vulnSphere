@@ -12,7 +12,6 @@ export default function SettingsPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                <p className="text-muted-foreground">Manage your account settings and preferences</p>
             </div>
 
             <div className="grid gap-6">
@@ -81,7 +80,7 @@ export default function SettingsPage() {
                             <div>
                                 <Label>Email Notifications</Label>
                                 <p className="text-sm text-muted-foreground">
-                                    Receive email updates about your reports
+                                    Receive email updates about your projects
                                 </p>
                             </div>
                             <Button variant="outline" size="sm">Enable</Button>

@@ -130,6 +130,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Custom User Model
 AUTH_USER_MODEL = 'reporting.User'
 
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'reporting.backends.EmailOrUsernameBackend',  # Custom backend for email/username login
+    'django.contrib.auth.backends.ModelBackend',  # Fallback to default
+]
+
 # REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

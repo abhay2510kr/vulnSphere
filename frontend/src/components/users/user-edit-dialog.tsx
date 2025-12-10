@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { User } from '@/lib/auth-utils';
 import api from '@/lib/api';
 
@@ -27,22 +28,45 @@ interface UserEditDialogProps {
 export function UserEditDialog({ user, open, onOpenChange, onSuccess }: UserEditDialogProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [companies, setCompanies] = useState<{ label: string, value: string }[]>([]);
     const [formData, setFormData] = useState({
         email: '',
-        first_name: '',
-        last_name: '',
-        global_role: 'NONE' as 'ADMIN' | 'NONE',
+        username: '',
+        name: '',
+        role: 'CLIENT' as 'ADMIN' | 'TESTER' | 'CLIENT',
         is_active: true,
+        companies: [] as string[],
     });
+
+    useEffect(() => {
+        const fetchCompanies = async () => {
+            try {
+                const res = await api.get('/companies/');
+                const companyOptions = (res.data.results || res.data).map((c: any) => ({
+                    label: c.name,
+                    value: c.id,
+                }));
+                setCompanies(companyOptions);
+            } catch (err) {
+                console.error('Failed to fetch companies', err);
+            }
+        };
+
+        if (open) {
+            fetchCompanies();
+        }
+    }, [open]);
 
     useEffect(() => {
         if (user) {
             setFormData({
                 email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                global_role: user.global_role,
+                username: user.username,
+                name: user.name,
+                role: user.role,
                 is_active: user.is_active,
+                // @ts-ignore - companies might inevitably exist on user object from API now
+                companies: user.companies || [],
             });
         }
     }, [user]);
@@ -78,7 +102,7 @@ export function UserEditDialog({ user, open, onOpenChange, onSuccess }: UserEdit
                             Update user information. Leave password empty to keep it unchanged.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                         {error && (
                             <Alert variant="destructive">
                                 <AlertDescription>{error}</AlertDescription>
@@ -94,41 +118,55 @@ export function UserEditDialog({ user, open, onOpenChange, onSuccess }: UserEdit
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-first-name">First Name *</Label>
-                                <Input
-                                    id="edit-first-name"
-                                    required
-                                    value={formData.first_name}
-                                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-last-name">Last Name *</Label>
-                                <Input
-                                    id="edit-last-name"
-                                    required
-                                    value={formData.last_name}
-                                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                />
-                            </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-username">Username</Label>
+                            <Input
+                                id="edit-username"
+                                value={formData.username}
+                                disabled
+                                className="bg-muted"
+                            />
+                            <p className="text-xs text-muted-foreground">Username cannot be changed after creation</p>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-name">Name *</Label>
+                            <Input
+                                id="edit-name"
+                                required
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="edit-role">Role</Label>
                             <Select
-                                value={formData.global_role}
-                                onValueChange={(value: 'ADMIN' | 'NONE') => setFormData({ ...formData, global_role: value })}
+                                value={formData.role}
+                                onValueChange={(value: 'ADMIN' | 'TESTER' | 'CLIENT') => setFormData({ ...formData, role: value })}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="NONE">Standard User</SelectItem>
-                                    <SelectItem value="ADMIN">Global Admin</SelectItem>
+                                    <SelectItem value="CLIENT">Client</SelectItem>
+                                    <SelectItem value="TESTER">Tester</SelectItem>
+                                    <SelectItem value="ADMIN">Admin</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {(formData.role === 'TESTER' || formData.role === 'CLIENT') && (
+                            <div className="grid gap-2">
+                                <Label>Assigned Companies</Label>
+                                <MultiSelect
+                                    options={companies}
+                                    selected={formData.companies}
+                                    onChange={(selected) => setFormData({ ...formData, companies: selected })}
+                                    placeholder="Select companies..."
+                                />
+                                <p className="text-xs text-muted-foreground">Select companies this user can access.</p>
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-2">
                             <input
                                 type="checkbox"

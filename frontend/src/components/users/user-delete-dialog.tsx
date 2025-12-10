@@ -67,7 +67,7 @@ export function UserDeleteDialog({ user, open, onOpenChange, onSuccess }: UserDe
                     <div className="rounded-lg border p-4 space-y-2">
                         <div>
                             <span className="text-sm font-medium">Name:</span>
-                            <span className="ml-2 text-sm">{user.first_name} {user.last_name}</span>
+                            <span className="ml-2 text-sm">{user.name}</span>
                         </div>
                         <div>
                             <span className="text-sm font-medium">Email:</span>
@@ -76,7 +76,7 @@ export function UserDeleteDialog({ user, open, onOpenChange, onSuccess }: UserDe
                         <div>
                             <span className="text-sm font-medium">Role:</span>
                             <span className="ml-2 text-sm">
-                                {user.global_role === 'ADMIN' ? 'Global Admin' : 'Standard User'}
+                                {user.role === 'ADMIN' ? 'Global Admin' : user.role === 'TESTER' ? 'Tester' : 'Client'}
                             </span>
                         </div>
                     </div>

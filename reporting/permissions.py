@@ -1,73 +1,43 @@
 from rest_framework import permissions
-from .models import CompanyMembership
 
-class IsGlobalAdmin(permissions.BasePermission):
+class IsAdmin(permissions.BasePermission):
+    """Check if user has Admin role"""
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.global_role == 'ADMIN'
+        return request.user.is_authenticated and request.user.role == 'ADMIN'
 
-class IsCompanyMember(permissions.BasePermission):
+class IsAdminOrTester(permissions.BasePermission):
+    """Allows Admins and Testers full access, Clients read-only"""
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Admins and Testers can do anything
+        if request.user.role in ['ADMIN', 'TESTER']:
+            return True
+        
+        # Clients can only read
+        return request.method in permissions.SAFE_METHODS
+
+class IsTesterOrAdmin(permissions.BasePermission):
     """
-    Checks if user is a member of the company accessed in the URL.
-    Usually company_id is in kwargs.
+    Allows write access only to Testers and Admins.
+    Clients have read-only access.
     """
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
         
-        if request.user.global_role == 'ADMIN':
-            return True
-
-        company_id = view.kwargs.get('company_pk') or view.kwargs.get('pk')
-        # If no company_id in URL, this permission might not be applicable or 
-        # the view handles listing which is filtered by queryset.
-        if not company_id:
-            return True
-        
-        return CompanyMembership.objects.filter(
-            user=request.user,
-            company__pk=company_id,
-            is_active=True
-        ).exists()
-
-class IsCompanyTester(permissions.BasePermission):
-    """
-    Allows write access only to Testers of the specific company.
-    """
-    def has_permission(self, request, view):
-        # Read permissions are handled by IsCompanyMember + ReadOnly/etc.
-        # This specifically protects unsafe methods.
+        # Read permissions for everyone
         if request.method in permissions.SAFE_METHODS:
             return True
-            
-        if not request.user.is_authenticated:
-            return False
+        
+        # Write permissions only for Admins and Testers
+        return request.user.role in ['ADMIN', 'TESTER']
 
-        if request.user.global_role == 'ADMIN':
-            return True
+class CanRequestRetest(permissions.BasePermission):
+    """
+    Allows all authenticated users to request retests.
+    """
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
 
-        company_id = view.kwargs.get('company_pk')
-        if not company_id:
-             # Try to find company from object if detail view
-             return True
-
-        return CompanyMembership.objects.filter(
-            user=request.user,
-            company__pk=company_id,
-            role=CompanyMembership.Role.TESTER,
-            is_active=True
-        ).exists()
-    
-    def has_object_permission(self, request, view, obj):
-        if request.user.global_role == 'ADMIN':
-            return True
-            
-        # Assuming obj has .company attribute
-        if not hasattr(obj, 'company'):
-            return False
-
-        return CompanyMembership.objects.filter(
-            user=request.user,
-            company=obj.company,
-            role=CompanyMembership.Role.TESTER,
-            is_active=True
-        ).exists()

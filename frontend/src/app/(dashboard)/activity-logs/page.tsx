@@ -36,7 +36,7 @@ const ACTION_COLORS: Record<string, string> = {
 
 const ENTITY_TYPE_COLORS: Record<string, string> = {
     VULNERABILITY: 'bg-red-500',
-    REPORT: 'bg-blue-500',
+    PROJECT: 'bg-blue-500',
     ASSET: 'bg-green-500',
     COMMENT: 'bg-purple-500',
 };
@@ -107,7 +107,6 @@ export default function ActivityLogsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Activity Logs</h1>
-                    <p className="text-muted-foreground mt-1">System-wide activity tracking</p>
                 </div>
                 <Badge variant="outline" className="text-lg px-3 py-1">
                     <Activity className="h-4 w-4 mr-2" />

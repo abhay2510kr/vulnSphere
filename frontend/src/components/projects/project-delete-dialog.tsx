@@ -14,43 +14,43 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import api from '@/lib/api';
 import { AlertTriangle } from 'lucide-react';
 
-interface Report {
+interface Project {
     id: string;
     company: string;
     title: string;
     engagement_type: string;
 }
 
-interface ReportDeleteDialogProps {
-    report: Report | null;
+interface ProjectDeleteDialogProps {
+    project: Project | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }
 
-export function ReportDeleteDialog({ report, open, onOpenChange, onSuccess }: ReportDeleteDialogProps) {
+export function ProjectDeleteDialog({ project, open, onOpenChange, onSuccess }: ProjectDeleteDialogProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const handleDelete = async () => {
-        if (!report) return;
+        if (!project) return;
 
         setLoading(true);
         setError('');
 
         try {
-            await api.delete(`/companies/${report.company}/reports/${report.id}/`);
+            await api.delete(`/companies/${project.company}/projects/${project.id}/`);
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
-            const errorMessage = err.response?.data?.detail || 'Failed to delete report';
+            const errorMessage = err.response?.data?.detail || 'Failed to delete project';
             setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
-    if (!report) return null;
+    if (!project) return null;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,10 +58,10 @@ export function ReportDeleteDialog({ report, open, onOpenChange, onSuccess }: Re
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
-                        Delete Report
+                        Delete Project
                     </DialogTitle>
                     <DialogDescription>
-                        This action cannot be undone. This will permanently delete the report and all associated vulnerabilities.
+                        This action cannot be undone. This will permanently delete the project and all associated vulnerabilities.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
@@ -73,11 +73,11 @@ export function ReportDeleteDialog({ report, open, onOpenChange, onSuccess }: Re
                     <div className="rounded-lg border p-4 space-y-2">
                         <div>
                             <span className="text-sm font-medium">Title:</span>
-                            <span className="ml-2 text-sm">{report.title}</span>
+                            <span className="ml-2 text-sm">{project.title}</span>
                         </div>
                         <div>
                             <span className="text-sm font-medium">Type:</span>
-                            <span className="ml-2 text-sm">{report.engagement_type}</span>
+                            <span className="ml-2 text-sm">{project.engagement_type}</span>
                         </div>
                     </div>
                 </div>
@@ -91,7 +91,7 @@ export function ReportDeleteDialog({ report, open, onOpenChange, onSuccess }: Re
                         onClick={handleDelete}
                         disabled={loading}
                     >
-                        {loading ? 'Deleting...' : 'Delete Report'}
+                        {loading ? 'Deleting...' : 'Delete Project'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

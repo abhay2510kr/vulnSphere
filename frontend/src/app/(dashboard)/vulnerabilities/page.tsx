@@ -17,7 +17,7 @@ interface Company {
     name: string;
 }
 
-interface Report {
+interface Project {
     id: string;
     title: string;
     company: string;
@@ -29,14 +29,14 @@ interface Vulnerability {
     severity: string;
     status: string;
     category: string;
-    report: string;
+    project: string;
     created_at: string;
 }
 
 export default function VulnerabilitiesPage() {
     const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
-    const [reports, setReports] = useState<Report[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [selectedCompany, setSelectedCompany] = useState<string>('all');
@@ -65,28 +65,28 @@ export default function VulnerabilitiesPage() {
             const companiesData = await companiesRes.json();
             setCompanies(companiesData.results || companiesData);
 
-            // Fetch reports
-            const reportsRes = await fetch('http://localhost:8000/api/v1/reports/', {
+            // Fetch projects
+            const projectsRes = await fetch('http://localhost:8000/api/v1/projects/', {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const reportsData = await reportsRes.json();
-            setReports(reportsData.results || reportsData);
+            const projectsData = await projectsRes.json();
+            setProjects(projectsData.results || projectsData);
 
-            // Fetch all vulnerabilities from all reports
+            // Fetch all vulnerabilities from all projects
             const allVulns: Vulnerability[] = [];
-            const reportsList = reportsData.results || reportsData;
+            const projectsList = projectsData.results || projectsData;
 
-            for (const report of reportsList) {
+            for (const project of projectsList) {
                 try {
                     const vulnsRes = await fetch(
-                        `http://localhost:8000/api/v1/companies/${report.company}/reports/${report.id}/vulnerabilities/`,
+                        `http://localhost:8000/api/v1/companies/${project.company}/projects/${project.id}/vulnerabilities/`,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
                     const vulnsData = await vulnsRes.json();
                     const vulns = vulnsData.results || vulnsData;
                     allVulns.push(...vulns);
                 } catch (error) {
-                    console.error(`Error fetching vulns for report ${report.id}:`, error);
+                    console.error(`Error fetching vulns for project ${project.id}:`, error);
                 }
             }
 
@@ -114,8 +114,8 @@ export default function VulnerabilitiesPage() {
 
         if (selectedCompany !== 'all') {
             const companyId = selectedCompany;
-            const companyReports = reports.filter(r => r.company === companyId).map(r => r.id);
-            filtered = filtered.filter(v => companyReports.includes(v.report));
+            const companyProjects = projects.filter(p => p.company === companyId).map(p => p.id);
+            filtered = filtered.filter(v => companyProjects.includes(v.project));
         }
 
         if (selectedSeverity !== 'all') {
@@ -131,15 +131,15 @@ export default function VulnerabilitiesPage() {
         return filtered.slice(startIndex, startIndex + 20);
     };
 
-    const getCompanyName = (reportId: string) => {
-        const report = reports.find(r => r.id === reportId);
-        if (!report) return 'Unknown';
-        const company = companies.find(c => c.id === report.company);
-        return company?.name || `Company ${report.company}`;
+    const getCompanyName = (projectId: string) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return 'Unknown';
+        const company = companies.find(c => c.id === project.company);
+        return company?.name || `Company ${project.company}`;
     };
 
-    const getReportTitle = (reportId: string) => {
-        return reports.find(r => r.id === reportId)?.title || `Report ${reportId}`;
+    const getProjectTitle = (projectId: string) => {
+        return projects.find(p => p.id === projectId)?.title || `Project ${projectId}`;
     };
 
     const getSeverityBadge = (severity: string) => {
@@ -176,7 +176,7 @@ export default function VulnerabilitiesPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Vulnerabilities</CardTitle>
-                    <CardDescription>View and filter all vulnerabilities across all reports</CardDescription>
+                    <CardDescription>View and filter all vulnerabilities across all projects</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col gap-4 mb-6">
@@ -238,7 +238,7 @@ export default function VulnerabilitiesPage() {
                                 <TableRow>
                                     <TableHead>Title</TableHead>
                                     <TableHead>Company</TableHead>
-                                    <TableHead>Report</TableHead>
+                                    <TableHead>Project</TableHead>
                                     <TableHead>Severity</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -261,13 +261,13 @@ export default function VulnerabilitiesPage() {
                                     filteredVulns.map((vuln) => (
                                         <TableRow key={vuln.id}>
                                             <TableCell className="font-medium">{vuln.title}</TableCell>
-                                            <TableCell>{getCompanyName(vuln.report)}</TableCell>
-                                            <TableCell>{getReportTitle(vuln.report)}</TableCell>
+                                            <TableCell>{getCompanyName(vuln.project)}</TableCell>
+                                            <TableCell>{getProjectTitle(vuln.project)}</TableCell>
                                             <TableCell>{getSeverityBadge(vuln.severity)}</TableCell>
                                             <TableCell>{getStatusBadge(vuln.status)}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={`/reports/${vuln.report}/vulnerabilities/${vuln.id}`}>
+                                                    <Link href={`/project/${vuln.project}/vulnerabilities/${vuln.id}`}>
                                                         <Eye className="h-4 w-4" />
                                                     </Link>
                                                 </Button>

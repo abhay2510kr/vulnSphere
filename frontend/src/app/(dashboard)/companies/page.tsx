@@ -24,7 +24,7 @@ interface Company {
     address: string;
     notes: string;
     is_active: boolean;
-    report_count?: number;
+    project_count?: number;
     asset_count?: number;
 }
 
@@ -93,7 +93,6 @@ export default function CompaniesPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">All Companies</h1>
-                    <p className="text-muted-foreground">Manage client companies and organizations</p>
                 </div>
                 <Button onClick={() => setCreateDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -151,7 +150,7 @@ export default function CompaniesPage() {
                                     <TableRow>
                                         <TableHead>Name</TableHead>
                                         <TableHead>Email</TableHead>
-                                        <TableHead>Reports</TableHead>
+                                        <TableHead>Projects</TableHead>
                                         <TableHead>Assets</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
@@ -164,7 +163,7 @@ export default function CompaniesPage() {
                                             <TableCell>{company.contact_email}</TableCell>
                                             <TableCell>
                                                 <span className="inline-flex items-center justify-center w-8 h-6 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
-                                                    {company.report_count || 0}
+                                                    {company.project_count || 0}
                                                 </span>
                                             </TableCell>
                                             <TableCell>

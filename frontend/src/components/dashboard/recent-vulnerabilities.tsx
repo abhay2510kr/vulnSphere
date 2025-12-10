@@ -10,8 +10,8 @@ interface Vulnerability {
     title: string;
     severity: string;
     status: string;
-    report_id: string;
-    report_title: string;
+    project_id: string;
+    project_title: string;
     company_id: string;
     company_name: string;
     created_at: string;
@@ -64,13 +64,13 @@ export function RecentVulnerabilities({ vulnerabilities }: RecentVulnerabilities
                         <div key={vuln.id} className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0">
                             <div className="space-y-1 flex-1">
                                 <Link
-                                    href={`/reports/${vuln.report_id}/vulnerabilities/${vuln.id}`}
+                                    href={`/project/${vuln.project_id}/vulnerabilities/${vuln.id}`}
                                     className="font-medium hover:underline"
                                 >
                                     {vuln.title}
                                 </Link>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span>{vuln.report_title}</span>
+                                    <span>{vuln.project_title}</span>
                                     <span>•</span>
                                     <span>{vuln.company_name}</span>
                                     <span>•</span>

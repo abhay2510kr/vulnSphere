@@ -16,14 +16,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
-interface ReportCreateDialogProps {
+interface ProjectCreateDialogProps {
     companyId: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export function ReportCreateDialog({ companyId, open, onOpenChange, onSuccess }: ReportCreateDialogProps) {
+export function ProjectCreateDialog({ companyId, open, onOpenChange, onSuccess }: ProjectCreateDialogProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -45,8 +45,8 @@ export function ReportCreateDialog({ companyId, open, onOpenChange, onSuccess }:
         setError('');
 
         try {
-            const response = await api.post(`/companies/${companyId}/reports/`, formData);
-            const createdReport = response.data;
+            const response = await api.post(`/companies/${companyId}/projects/`, formData);
+            const createdProject = response.data;
 
             if (onSuccess) {
                 onSuccess();
@@ -54,8 +54,8 @@ export function ReportCreateDialog({ companyId, open, onOpenChange, onSuccess }:
 
             onOpenChange(false);
 
-            // Navigate to the report detail page
-            router.push(`/reports/${createdReport.id}`);
+            // Navigate to the project detail page
+            router.push(`/project/${createdProject.id}`);
 
             // Reset form
             setFormData({
@@ -68,7 +68,7 @@ export function ReportCreateDialog({ companyId, open, onOpenChange, onSuccess }:
         } catch (err: any) {
             const errorMessage = err.response?.data?.detail ||
                 err.response?.data?.title?.[0] ||
-                'Failed to create report';
+                'Failed to create project';
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -80,9 +80,9 @@ export function ReportCreateDialog({ companyId, open, onOpenChange, onSuccess }:
             <DialogContent className="sm:max-w-[600px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>New Report</DialogTitle>
+                        <DialogTitle>New Project</DialogTitle>
                         <DialogDescription>
-                            Create a new vulnerability assessment report
+                            Create a new vulnerability assessment project
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -92,7 +92,7 @@ export function ReportCreateDialog({ companyId, open, onOpenChange, onSuccess }:
                             </Alert>
                         )}
                         <div className="grid gap-2">
-                            <Label htmlFor="title">Report Title *</Label>
+                            <Label htmlFor="title">Project Title *</Label>
                             <Input
                                 id="title"
                                 required
@@ -139,7 +139,7 @@ export function ReportCreateDialog({ companyId, open, onOpenChange, onSuccess }:
                             Cancel
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? 'Creating...' : 'Create Report'}
+                            {loading ? 'Creating...' : 'Create Project'}
                         </Button>
                     </DialogFooter>
                 </form>
