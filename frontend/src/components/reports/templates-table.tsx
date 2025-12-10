@@ -64,45 +64,86 @@ export function TemplatesTable({ templates, loading, onDelete, onEdit }: Templat
                 <TableHeader>
                     <TableRow>
                         <TableHead>Name</TableHead>
+                        <TableHead>Type</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead>Uploaded</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {templates.map((template) => (
-                        <TableRow key={template.id}>
-                            <TableCell className="font-medium">{template.name}</TableCell>
-                            <TableCell className="text-muted-foreground">
-                                {template.description || 'No description'}
-                            </TableCell>
-                            <TableCell>
-                                {formatDistanceToNow(new Date(template.created_at), { addSuffix: true })}
-                            </TableCell>
-                            <TableCell className="text-right space-x-2">
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => onEdit(template)}
-                                >
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button size="sm" variant="ghost" asChild>
-                                    <a href={template.file} download>
+                    {templates.map((template) => {
+                        const isHtml = template.file.toLowerCase().endsWith('.html');
+                        const isDocx = template.file.toLowerCase().endsWith('.docx');
+                        const type = isHtml ? 'HTML' : isDocx ? 'DOCX' : 'Unknown';
+
+                        return (
+                            <TableRow key={template.id}>
+                                <TableCell className="font-medium">{template.name}</TableCell>
+                                <TableCell>
+                                    <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                                        {type}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {template.description || 'No description'}
+                                </TableCell>
+                                <TableCell>
+                                    {formatDistanceToNow(new Date(template.created_at), { addSuffix: true })}
+                                </TableCell>
+                                <TableCell className="text-right space-x-2">
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => onEdit(template)}
+                                    >
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={async () => {
+                                            try {
+                                                const response = await api.get(`/report-templates/${template.id}/download/`, {
+                                                    responseType: 'blob'
+                                                });
+
+                                                const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                const link = document.createElement('a');
+                                                link.href = url;
+                                                const contentDisposition = response.headers['content-disposition'];
+                                                let filename = template.file.split('/').pop() || 'template';
+
+                                                if (contentDisposition) {
+                                                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                                                    if (filenameMatch && filenameMatch.length === 2)
+                                                        filename = filenameMatch[1];
+                                                }
+
+                                                link.setAttribute('download', filename);
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                link.remove();
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Failed to download template:', error);
+                                                alert('Failed to download template');
+                                            }
+                                        }}
+                                    >
                                         <Download className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDelete(template.id)}
-                                    disabled={deleting === template.id}
-                                >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleDelete(template.id)}
+                                        disabled={deleting === template.id}
+                                    >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })}
                 </TableBody>
             </Table>
         </div>

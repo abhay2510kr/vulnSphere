@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import api from '@/lib/api';
 import { ReportTemplate, Project, Company } from '@/lib/types'; // Make sure Project/Company are exported or use any
 
@@ -40,7 +41,6 @@ export function ReportGeneratorDialog({ open, onOpenChange, onSuccess }: ReportG
     const [scope, setScope] = useState<'project' | 'company'>('project');
     const [selectedTemplate, setSelectedTemplate] = useState<string>('');
     const [selectedScopeId, setSelectedScopeId] = useState<string>('');
-    const [format, setFormat] = useState<'DOCX' | 'HTML'>('DOCX');
 
     useEffect(() => {
         if (open) {
@@ -80,7 +80,6 @@ export function ReportGeneratorDialog({ open, onOpenChange, onSuccess }: ReportG
         try {
             const payload: any = {
                 template_id: selectedTemplate,
-                format: format,
             };
 
             if (scope === 'project') {
@@ -125,9 +124,23 @@ export function ReportGeneratorDialog({ open, onOpenChange, onSuccess }: ReportG
                                 <SelectValue placeholder="Select a template" />
                             </SelectTrigger>
                             <SelectContent>
-                                {templates.map(t => (
-                                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                ))}
+                                {templates.map(t => {
+                                    const isHtml = t.file?.toLowerCase().endsWith('.html');
+                                    const isDocx = t.file?.toLowerCase().endsWith('.docx');
+                                    const type = isHtml ? 'HTML' : isDocx ? 'DOCX' : 'Unknown';
+                                    const badgeColor = isHtml ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800';
+
+                                    return (
+                                        <SelectItem key={t.id} value={t.id}>
+                                            <div className="flex items-center justify-between w-full gap-4">
+                                                <span>{t.name}</span>
+                                                <Badge variant="outline" className={`ml-2 text-xs py-0 h-5 ${badgeColor}`}>
+                                                    {type}
+                                                </Badge>
+                                            </div>
+                                        </SelectItem>
+                                    );
+                                })}
                             </SelectContent>
                         </Select>
                     </div>
@@ -167,21 +180,6 @@ export function ReportGeneratorDialog({ open, onOpenChange, onSuccess }: ReportG
                         </Select>
                     </div>
 
-                    {/* Format Selection */}
-                    <div className="grid gap-2">
-                        <Label>Format</Label>
-                        <Select value={format} onValueChange={(v: 'DOCX' | 'HTML') => setFormat(v)}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="DOCX">Word Document (.docx)</SelectItem>
-                                {/* HTML not fully implemented, but option exists */}
-                                <SelectItem value="HTML" disabled>HTML (Coming Soon)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                 </div>
 
                 <DialogFooter>
@@ -193,6 +191,6 @@ export function ReportGeneratorDialog({ open, onOpenChange, onSuccess }: ReportG
                     </Button>
                 </DialogFooter>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

@@ -10,17 +10,19 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { FileText, Download, AlertCircle } from 'lucide-react';
+import { FileText, Download, AlertCircle, Building2, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import api from '@/lib/api';
 
 interface ReportsTableProps {
     reports: GeneratedReport[];
     loading?: boolean;
+    onDelete: (id: string) => void;
 }
 
-export function ReportsTable({ reports, loading }: ReportsTableProps) {
+export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) {
     if (loading) {
         return <div className="text-center py-8">Loading reports...</div>;
     }
@@ -37,12 +39,33 @@ export function ReportsTable({ reports, loading }: ReportsTableProps) {
         );
     }
 
+    const handleDownload = async (reportId: string, filename: string) => {
+        try {
+            const response = await api.get(`/generated-reports/${reportId}/download/`, {
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Failed to download report:', error);
+            alert('Failed to download report');
+        }
+    };
+
     return (
         <div className="rounded-md border">
             <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead>Date</TableHead>
+                        <TableHead>Company</TableHead>
                         <TableHead>Template</TableHead>
                         <TableHead>Scope</TableHead>
                         <TableHead>Format</TableHead>
@@ -55,6 +78,14 @@ export function ReportsTable({ reports, loading }: ReportsTableProps) {
                         <TableRow key={report.id}>
                             <TableCell>
                                 {formatDistanceToNow(new Date(report.created_at), { addSuffix: true })}
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium">
+                                        {report.company_name || report.company || 'Unknown'}
+                                    </span>
+                                </div>
                             </TableCell>
                             <TableCell>
                                 <span className="text-sm text-muted-foreground">
@@ -98,15 +129,26 @@ export function ReportsTable({ reports, loading }: ReportsTableProps) {
                                     <Badge variant="default" className="bg-green-600">Ready</Badge>
                                 )}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right space-x-2">
                                 {!report.is_failed && report.file && (
-                                    <Button size="sm" variant="ghost" asChild>
-                                        <a href={report.file} download>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </a>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            const filename = report.file ? report.file.split('/').pop() : `report-${report.id}.${report.format.toLowerCase()}`;
+                                            handleDownload(report.id, filename || 'report');
+                                        }}
+                                    >
+                                        <Download className="h-4 w-4" />
                                     </Button>
                                 )}
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => onDelete(report.id)}
+                                >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
                             </TableCell>
                         </TableRow>
                     ))}
@@ -115,3 +157,4 @@ export function ReportsTable({ reports, loading }: ReportsTableProps) {
         </div>
     );
 }
+

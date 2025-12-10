@@ -1,0 +1,18 @@
+
+        <html>
+        <head><title>{{ project.title }} Report</title></head>
+        <body>
+            <h1>{{ project.title }}</h1>
+            <p><strong>Company:</strong> {{ project.company }}</p>
+            <p><strong>Status:</strong> {{ project.status }}</p>
+            <hr>
+            <h2>Vulnerabilities</h2>
+            {% for vuln in vulnerabilities %}
+                <h3>{{ vuln.title }} ({{ vuln.severity }})</h3>
+                <p>Status: {{ vuln.status }}</p>
+                <div>{{ vuln.description }}</div>
+                <hr>
+            {% endfor %}
+        </body>
+        </html>
+        

@@ -252,7 +252,6 @@ class ReportGenerationRequestSerializer(serializers.Serializer):
     template_id = serializers.UUIDField()
     project_id = serializers.UUIDField(required=False, allow_null=True)
     company_id = serializers.UUIDField(required=False, allow_null=True)
-    format = serializers.ChoiceField(choices=GeneratedReport.Format.choices, default=GeneratedReport.Format.DOCX)
 
     def validate(self, attrs):
         if not attrs.get('project_id') and not attrs.get('company_id'):

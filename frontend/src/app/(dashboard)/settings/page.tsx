@@ -7,7 +7,28 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Settings as SettingsIcon, User, Bell, Shield } from 'lucide-react';
 
+import { useEffect, useState } from 'react';
+import api from '@/lib/api';
+
 export default function SettingsPage() {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await api.get('/users/me/');
+                const user = response.data;
+                setName(user.name || '');
+                setEmail(user.email || '');
+            } catch (error) {
+                console.error('Failed to fetch user data:', error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
     return (
         <div className="space-y-6">
             <div>
@@ -28,11 +49,24 @@ export default function SettingsPage() {
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" placeholder="Enter your name" />
+                            <Input
+                                id="name"
+                                placeholder="Enter your name"
+                                className="max-w-md"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" placeholder="Enter your email" />
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="Enter your email"
+                                className="max-w-md"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
                         </div>
                         <Button>Save Changes</Button>
                     </CardContent>
@@ -51,15 +85,15 @@ export default function SettingsPage() {
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
                             <Label htmlFor="current-password">Current Password</Label>
-                            <Input id="current-password" type="password" />
+                            <Input id="current-password" type="password" className="max-w-md" />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="new-password">New Password</Label>
-                            <Input id="new-password" type="password" />
+                            <Input id="new-password" type="password" className="max-w-md" />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="confirm-password">Confirm Password</Label>
-                            <Input id="confirm-password" type="password" />
+                            <Input id="confirm-password" type="password" className="max-w-md" />
                         </div>
                         <Button>Update Password</Button>
                     </CardContent>

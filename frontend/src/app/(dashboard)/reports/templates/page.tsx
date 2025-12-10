@@ -2,16 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { TemplatesTable } from '@/components/reports/templates-table';
 import { TemplateUploadDialog } from '@/components/reports/template-upload-dialog';
 import { TemplateEditDialog } from '@/components/reports/template-edit-dialog';
 import api from '@/lib/api';
 import { ReportTemplate } from '@/lib/types';
 import Link from 'next/link';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 export default function TemplatesPage() {
     const [templates, setTemplates] = useState<ReportTemplate[]>([]);
+    const [itemsPerPage] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -38,34 +41,46 @@ export default function TemplatesPage() {
         setEditDialogOpen(true);
     };
 
+    // Calculate pagination
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentTemplates = templates.slice(indexOfFirstItem, indexOfLastItem);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <Link href="/reports">
-                            <Button variant="ghost" size="sm">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Reports
-                            </Button>
-                        </Link>
-                    </div>
                     <h2 className="text-3xl font-bold tracking-tight">Report Templates</h2>
                     <p className="text-muted-foreground">
                         Manage your report templates for generating documents.
                     </p>
                 </div>
-                <Button onClick={() => setDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Upload Template
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/reports">
+                            <FileText className="mr-2 h-4 w-4" />
+                            Manage Reports
+                        </Link>
+                    </Button>
+                    <Button onClick={() => setDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Upload Template
+                    </Button>
+                </div>
             </div>
 
             <TemplatesTable
-                templates={templates}
+                templates={currentTemplates}
                 loading={loading}
                 onDelete={fetchTemplates}
                 onEdit={handleEdit}
+            />
+
+            <TablePagination
+                currentPage={currentPage}
+                totalItems={templates.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
             />
 
             <TemplateUploadDialog

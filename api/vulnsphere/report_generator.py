@@ -8,11 +8,13 @@ from .models import GeneratedReport, Project, Company
 class ReportGenerator:
     def generate_report(self, template, context, output_format, generated_report_instance):
         try:
+            if not template.file:
+                raise ValueError("Template file/package not found")
+
             if output_format == GeneratedReport.Format.DOCX:
                 self._generate_docx(template, context, generated_report_instance)
             elif output_format == GeneratedReport.Format.HTML:
-                # Placeholder for HTML generation if needed later
-                pass
+                self._generate_html(template, context, generated_report_instance)
             
         except Exception as e:
             generated_report_instance.is_failed = True

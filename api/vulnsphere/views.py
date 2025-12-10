@@ -1,5 +1,7 @@
 from rest_framework import viewsets, permissions, filters, decorators, response, status
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+
 from .models import User, Company, Asset, Project, Vulnerability, VulnerabilityAsset, Retest, Comment, Attachment, ActivityLog, ProjectAsset, ReportTemplate, GeneratedReport
 from .serializers import (
     UserSerializer, CompanySerializer,
@@ -460,21 +462,57 @@ class DashboardStatsViewSet(viewsets.ViewSet):
             'vulnerability_trend': trend_data,
         })
 
+from rest_framework.pagination import PageNumberPagination
+
+class StandardPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class ReportTemplateViewSet(viewsets.ModelViewSet):
     queryset = ReportTemplate.objects.all()
     serializer_class = ReportTemplateSerializer
     permission_classes = [permissions.IsAuthenticated] # Admin only for modification?
+    pagination_class = StandardPagination
     
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAuthenticated(), IsAdmin()]
         return [permissions.IsAuthenticated()]
 
+    @decorators.action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        from django.http import FileResponse
+        import os
+        
+        template = self.get_object()
+        if not template.file:
+             return response.Response({'error': 'Template file not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        file_handle = template.file.open()
+        
+        # Set content type based on format
+        content_type = 'application/octet-stream'
+        filename = template.file.name.lower()
+        if filename.endswith('.html'):
+            content_type = 'text/html'
+        elif filename.endswith('.docx'):
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            
+        response = FileResponse(file_handle, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(template.file.name)}"'
+        return response
+
 class GeneratedReportViewSet(viewsets.ModelViewSet):
     queryset = GeneratedReport.objects.all()
     serializer_class = GeneratedReportSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+    pagination_class = StandardPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    search_fields = ['project__title', 'template__name', 'company__name', 'format']
+    filterset_fields = ['company__name', 'company'] # Allow filtering by company name or ID
+    ordering_fields = ['created_at', 'status']
+
     def get_queryset(self):
         # Users see reports they created, or all if Admin? 
         # Let's say all authenticated users can see non-private reports (we didn't implement private flag yet)
@@ -485,6 +523,28 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    @decorators.action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        from django.http import FileResponse
+        import os
+        
+        report = self.get_object()
+        if not report.file:
+             return response.Response({'error': 'Report file not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        file_handle = report.file.open()
+        
+        # Set content type based on format
+        content_type = 'application/octet-stream'
+        if report.format == 'HTML':
+            content_type = 'text/html'
+        elif report.format == 'DOCX':
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            
+        response = FileResponse(file_handle, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(report.file.name)}"'
+        return response
+
     @decorators.action(detail=False, methods=['post'])
     def generate(self, request):
         serializer = ReportGenerationRequestSerializer(data=request.data)
@@ -493,9 +553,17 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
         template_id = serializer.validated_data['template_id']
         project_id = serializer.validated_data.get('project_id')
         company_id = serializer.validated_data.get('company_id')
-        output_format = serializer.validated_data['format']
-        
+
         template = get_object_or_404(ReportTemplate, pk=template_id)
+
+        # Infer format from template extension
+        filename = template.file.name.lower()
+        if filename.endswith('.html'):
+            output_format = 'HTML'
+        elif filename.endswith('.docx'):
+            output_format = 'DOCX'
+        else:
+            output_format = 'DOCX' # Default fallback
         
         # Create GeneratedReport entry
         report_instance = GeneratedReport.objects.create(
@@ -511,13 +579,14 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
             if project_id:
                 project = get_object_or_404(Project, pk=project_id)
                 report_instance.project = project
+                report_instance.company = project.company
                 context = generator.get_project_context(project)
             elif company_id:
                 company = get_object_or_404(Company, pk=company_id)
                 report_instance.company = company
-                # TODO: Implement get_company_context in ReportGenerator
-                # context = generator.get_company_context(company)
-                context = {'company': {'name': company.name}} # Valid placeholder
+                context = generator.get_company_context(company)
+            
+            report_instance.save()
             
             report_instance.save()
             

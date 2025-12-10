@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { User, getUserFullName } from '@/lib/auth-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,19 +49,27 @@ export default function UsersPage() {
         fetchUsers();
     }, []);
 
+    const [roleFilter, setRoleFilter] = useState('all');
+
     useEffect(() => {
+        let result = users;
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            setFilteredUsers(users.filter(user =>
+            result = result.filter(user =>
                 user.email.toLowerCase().includes(query) ||
                 user.username.toLowerCase().includes(query) ||
                 user.name.toLowerCase().includes(query)
-            ));
-        } else {
-            setFilteredUsers(users);
+            );
         }
+
+        if (roleFilter !== 'all') {
+            result = result.filter(user => user.role === roleFilter);
+        }
+
+        setFilteredUsers(result);
         setCurrentPage(1); // Reset to first page on search
-    }, [searchQuery, users]);
+    }, [searchQuery, roleFilter, users]);
 
     const handleEditClick = (user: User) => {
         setSelectedUser(user);
@@ -103,6 +112,26 @@ export default function UsersPage() {
                         className="pl-8"
                     />
                 </div>
+                <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search users..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8"
+                    />
+                </div>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="TESTER">Tester</SelectItem>
+                        <SelectItem value="CLIENT">Client</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             {loading ? (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TablePagination } from '@/components/ui/table-pagination';
@@ -59,19 +60,28 @@ export default function CompaniesPage() {
         fetchCompanies();
     }, []);
 
+    const [statusFilter, setStatusFilter] = useState('all');
+
     useEffect(() => {
+        let result = companies;
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            setFilteredCompanies(companies.filter(company =>
+            result = result.filter(company =>
                 company.name.toLowerCase().includes(query) ||
                 company.contact_email.toLowerCase().includes(query) ||
                 company.slug.toLowerCase().includes(query)
-            ));
-        } else {
-            setFilteredCompanies(companies);
+            );
         }
-        setCurrentPage(1); // Reset to first page on search
-    }, [searchQuery, companies]);
+
+        if (statusFilter !== 'all') {
+            const isActive = statusFilter === 'active';
+            result = result.filter(company => company.is_active === isActive);
+        }
+
+        setFilteredCompanies(result);
+        setCurrentPage(1); // Reset to first page on search/filter
+    }, [searchQuery, statusFilter, companies]);
 
     const handleEditClick = (company: Company) => {
         setSelectedCompany(company);
@@ -112,6 +122,16 @@ export default function CompaniesPage() {
                         className="pl-8"
                     />
                 </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             {loading ? (

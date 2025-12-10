@@ -178,18 +178,18 @@ export default function VulnerabilitiesPage() {
             </div>
 
             <div className="flex flex-col gap-4">
-                <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search vulnerabilities..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-8"
-                    />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search vulnerabilities..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-8"
+                        />
+                    </div>
                     <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="All Companies" />
                         </SelectTrigger>
                         <SelectContent>
@@ -202,7 +202,7 @@ export default function VulnerabilitiesPage() {
                         </SelectContent>
                     </Select>
                     <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="All Severities" />
                         </SelectTrigger>
                         <SelectContent>
@@ -215,7 +215,7 @@ export default function VulnerabilitiesPage() {
                         </SelectContent>
                     </Select>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="All Statuses" />
                         </SelectTrigger>
                         <SelectContent>
