@@ -50,6 +50,10 @@ docker compose -f compose.standalone.yml up -d
 # Frontend: http://localhost:3000
 # API: http://localhost:8000
 # API Documentation: http://localhost:8000/api/docs/
+# Default admin credentials:
+#   Email: admin@example.com
+#   Username: admin
+#   Password: password
 ```
 
 ### Environment Configuration
