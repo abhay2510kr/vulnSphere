@@ -13,7 +13,7 @@ import { fetchCurrentUser } from '@/lib/auth-utils';
 import { VulnSphereLogo } from '@/components/layout/logo';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const response = await api.post('/auth/login/', { email, password });
+            const response = await api.post('/auth/login/', { username, password });
             const { access, refresh } = response.data;
 
             Cookies.set('access_token', access);
@@ -100,13 +100,13 @@ export default function LoginPage() {
                                 </Alert>
                             )}
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email or Username</Label>
+                                <Label htmlFor="username">Email or Username</Label>
                                 <Input
-                                    id="email"
+                                    id="username"
                                     required
                                     placeholder="email@example.com or username"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                 />
                             </div>
                             <div className="grid gap-2">
