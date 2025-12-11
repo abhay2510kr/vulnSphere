@@ -1015,24 +1015,36 @@ class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
                     cvss_score = row.get('cvss_base_score', '').strip()
                     cvss_score = float(cvss_score) if cvss_score else None
                     
-                    template = VulnerabilityTemplate.objects.create(
-                        title=row['title'].strip(),
-                        severity=row['severity'].strip().upper(),
-                        cvss_base_score=cvss_score,
-                        cvss_vector=row.get('cvss_vector', '').strip(),
-                        details_md=row.get('details_md', '').strip(),
-                        references=references,
-                        created_by=request.user
+                    template_title = row['title'].strip()
+                    
+                    # Check if template already exists and update it, or create new
+                    template, created_new = VulnerabilityTemplate.objects.update_or_create(
+                        title=template_title,
+                        defaults={
+                            'severity': row['severity'].strip().upper(),
+                            'cvss_base_score': cvss_score,
+                            'cvss_vector': row.get('cvss_vector', '').strip(),
+                            'details_md': row.get('details_md', '').strip(),
+                            'references': references,
+                            'created_by': request.user
+                        }
                     )
-                    created.append({'id': str(template.id), 'title': template.title})
+                    
+                    action = 'created' if created_new else 'updated'
+                    created.append({'id': str(template.id), 'title': template.title, 'action': action})
                 except Exception as e:
                     errors.append({'row': row_num, 'error': str(e)})
             
+            created_count = len([item for item in created if item['action'] == 'created'])
+            updated_count = len([item for item in created if item['action'] == 'updated'])
+            
             return Response({
-                'created': len(created),
+                'created': created_count,
+                'updated': updated_count,
+                'total': len(created),
                 'errors': errors,
                 'items': created
-            }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_201_CREATED if created_count > 0 else status.HTTP_200_OK)
         
         except Exception as e:
             return Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)

@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     User, Company, Asset, Project, 
     Vulnerability, VulnerabilityAsset, Retest, 
-    Comment, Attachment, ActivityLog, ProjectAsset
+    Comment, Attachment, ActivityLog, ProjectAsset,
+    ReportTemplate, VulnerabilityTemplate, GeneratedReport
 )
 
 # Register your models here.
@@ -69,3 +70,24 @@ class ActivityLogAdmin(admin.ModelAdmin):
     list_display = ('user', 'action', 'entity_type', 'company', 'created_at')
     list_filter = ('action', 'entity_type', 'company')
     search_fields = ('user__email', 'company__name')
+
+@admin.register(ReportTemplate)
+class ReportTemplateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'created_at', 'updated_at')
+    list_filter = ('created_at',)
+    search_fields = ('name', 'description')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+@admin.register(VulnerabilityTemplate)
+class VulnerabilityTemplateAdmin(admin.ModelAdmin):
+    list_display = ('title', 'severity', 'cvss_base_score', 'created_by', 'created_at', 'updated_at')
+    list_filter = ('severity', 'created_at')
+    search_fields = ('title', 'details_md')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+@admin.register(GeneratedReport)
+class GeneratedReportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'project', 'template', 'format', 'is_failed', 'created_by', 'created_at')
+    list_filter = ('format', 'is_failed', 'created_at', 'project__company')
+    search_fields = ('project__title', 'template__name')
+    readonly_fields = ('id', 'created_at')
