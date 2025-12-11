@@ -455,6 +455,7 @@ export default function ProjectDetailPage() {
                                     <SelectItem value="MEDIUM"><SeverityBadge severity="MEDIUM" grow /></SelectItem>
                                     <SelectItem value="LOW"><SeverityBadge severity="LOW" grow /></SelectItem>
                                     <SelectItem value="INFO"><SeverityBadge severity="INFO" grow /></SelectItem>
+                                    <SelectItem value="UNCLASSIFIED"><SeverityBadge severity="UNCLASSIFIED" grow /></SelectItem>
                                 </SelectContent>
                             </Select>
                             <Select value={vulnStatusFilter} onValueChange={setVulnStatusFilter}>
@@ -521,11 +522,6 @@ export default function ProjectDetailPage() {
                                                             className="flex justify-end gap-2"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
-                                                            <Button variant="ghost" size="sm" asChild>
-                                                                <Link href={`/project/${projectId}/vulnerabilities/${vuln.id}`}>
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Link>
-                                                            </Button>
                                                             <Button variant="ghost" size="sm" asChild>
                                                                 <Link href={`/project/${projectId}/vulnerabilities/${vuln.id}/edit`}>
                                                                     <Pencil className="h-4 w-4" />

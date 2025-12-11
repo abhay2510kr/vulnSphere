@@ -35,6 +35,7 @@ interface Project {
     summary: string;
     scope_description: string;
     created_at: string;
+    vulnerability_count?: number;
 }
 
 export default function ProjectsPage() {
@@ -85,7 +86,27 @@ export default function ProjectsPage() {
                 filteredProjects = filteredProjects.filter((p: Project) => p.status === selectedStatus);
             }
 
-            setProjects(filteredProjects);
+            // Fetch vulnerability counts for each project
+            const projectsWithCounts = await Promise.all(
+                filteredProjects.map(async (project: Project) => {
+                    try {
+                        const vulnsRes = await api.get(`/companies/${project.company}/projects/${project.id}/vulnerabilities/`);
+                        const vulnsData = vulnsRes.data.results || vulnsRes.data;
+                        return {
+                            ...project,
+                            vulnerability_count: Array.isArray(vulnsData) ? vulnsData.length : 0
+                        };
+                    } catch (error) {
+                        console.error(`Failed to fetch vulnerabilities for project ${project.id}:`, error);
+                        return {
+                            ...project,
+                            vulnerability_count: 0
+                        };
+                    }
+                })
+            );
+
+            setProjects(projectsWithCounts);
             setTotalCount(projectsData.count || filteredProjects.length);
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -184,8 +205,9 @@ export default function ProjectsPage() {
                         <TableRow>
                             <TableHead>Title</TableHead>
                             <TableHead>Company</TableHead>
-                            <TableHead>Type</TableHead>
+                            <TableHead>Engagement Type</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Vulnerabilities</TableHead>
                             <TableHead>Start Date</TableHead>
                             <TableHead>End Date</TableHead>
                             {canEdit && <TableHead className="text-right">Actions</TableHead>}
@@ -215,16 +237,16 @@ export default function ProjectsPage() {
                                     <TableCell>{getCompanyName(project.company)}</TableCell>
                                     <TableCell>{project.engagement_type}</TableCell>
                                     <TableCell>{getStatusBadge(project.status)}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                                            {project.vulnerability_count || 0}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
                                     <TableCell>{new Date(project.end_date).toLocaleDateString()}</TableCell>
                                     {canEdit && (
                                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <Link href={`/project/${project.id}`}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Link>
-                                                </Button>
                                                 <Button variant="ghost" size="sm" onClick={(e) => handleEdit(e, project)}>
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>

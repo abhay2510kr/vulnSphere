@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash, Plus, Search, Upload } from 'lucide-react';
+import { Pencil, Trash2, Plus, Search, Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { format } from 'date-fns';
 import { SeverityBadge } from '@/components/vulnerabilities/severity-badge';
@@ -129,6 +129,7 @@ export function TemplatesTable() {
                         <SelectItem value="MEDIUM">Medium</SelectItem>
                         <SelectItem value="LOW">Low</SelectItem>
                         <SelectItem value="INFO">Info</SelectItem>
+                        <SelectItem value="UNCLASSIFIED">Unclassified</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -158,30 +159,31 @@ export function TemplatesTable() {
                             </TableRow>
                         ) : (
                             templates.map((template) => (
-                                <TableRow key={template.id}>
+                                <TableRow 
+                                    key={template.id}
+                                    className="cursor-pointer hover:bg-muted/50"
+                                    onClick={() => router.push(`/templates/${template.id}`)}
+                                >
                                     <TableCell className="font-medium">{template.title}</TableCell>
                                     <TableCell>
-                                        <SeverityBadge severity={template.severity} />
+                                        <SeverityBadge severity={template.severity} grow />
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {format(new Date(template.updated_at), 'MMM d, yyyy')}
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex justify-end gap-2">
                                             {(user?.role === 'ADMIN' || user?.role === 'TESTER') && (
                                                 <>
-                                                    <Link href={`/templates/${template.id}`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
+                                                    <Button variant="ghost" size="sm">
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-destructive hover:text-destructive"
                                                         onClick={() => setTemplateToDelete(template.id)}
                                                     >
-                                                        <Trash className="h-4 w-4" />
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
                                                     </Button>
                                                 </>
                                             )}

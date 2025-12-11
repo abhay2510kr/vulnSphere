@@ -47,6 +47,7 @@ interface Project {
     end_date: string;
     summary: string;
     created_at: string;
+    vulnerability_count?: number;
 }
 
 interface Asset {
@@ -102,7 +103,29 @@ export default function CompanyDetailPage() {
             ]);
 
             setCompany(companyRes.data);
-            setProjects(projectsRes.data.results || projectsRes.data);
+            const projectsData = projectsRes.data.results || projectsRes.data;
+            
+            // Fetch vulnerability counts for each project
+            const projectsWithCounts = await Promise.all(
+                projectsData.map(async (project: Project) => {
+                    try {
+                        const vulnsRes = await api.get(`/companies/${companyId}/projects/${project.id}/vulnerabilities/`);
+                        const vulnsData = vulnsRes.data.results || vulnsRes.data;
+                        return {
+                            ...project,
+                            vulnerability_count: Array.isArray(vulnsData) ? vulnsData.length : 0
+                        };
+                    } catch (error) {
+                        console.error(`Failed to fetch vulnerabilities for project ${project.id}:`, error);
+                        return {
+                            ...project,
+                            vulnerability_count: 0
+                        };
+                    }
+                })
+            );
+            
+            setProjects(projectsWithCounts);
             setAssets(assetsRes.data.results || assetsRes.data);
         } catch (err: any) {
             console.error("Failed to fetch company data", err);
@@ -332,6 +355,7 @@ export default function CompanyDetailPage() {
                                             <TableHead>Title</TableHead>
                                             <TableHead>Type</TableHead>
                                             <TableHead>Status</TableHead>
+                                            <TableHead>Vulnerabilities</TableHead>
                                             <TableHead>Dates</TableHead>
                                             {canEdit && <TableHead className="text-right">Actions</TableHead>}
                                         </TableRow>
@@ -350,17 +374,17 @@ export default function CompanyDetailPage() {
                                                         {formatStatus(project.status)}
                                                     </Badge>
                                                 </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                                                        {project.vulnerability_count || 0}
+                                                    </Badge>
+                                                </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
                                                     {new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}
                                                 </TableCell>
                                                 {canEdit && (
                                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex justify-end gap-2">
-                                                            <Button variant="ghost" size="sm" asChild>
-                                                                <Link href={`/project/${project.id}`}>
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Link>
-                                                            </Button>
                                                             <Button variant="ghost" size="sm" onClick={(e) => handleProjectEdit(e, project)}>
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>

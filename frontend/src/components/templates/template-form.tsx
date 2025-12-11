@@ -212,6 +212,7 @@ export function TemplateForm({ templateId, mode }: TemplateFormProps) {
                                     <SelectItem value="MEDIUM" className="[&>span:not(.absolute)]:w-full"><SeverityBadge severity="MEDIUM" grow /></SelectItem>
                                     <SelectItem value="LOW" className="[&>span:not(.absolute)]:w-full"><SeverityBadge severity="LOW" grow /></SelectItem>
                                     <SelectItem value="INFO" className="[&>span:not(.absolute)]:w-full"><SeverityBadge severity="INFO" grow /></SelectItem>
+                                    <SelectItem value="UNCLASSIFIED" className="[&>span:not(.absolute)]:w-full"><SeverityBadge severity="UNCLASSIFIED" grow /></SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

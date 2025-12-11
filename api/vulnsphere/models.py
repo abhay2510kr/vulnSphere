@@ -157,6 +157,7 @@ class Vulnerability(models.Model):
         MEDIUM = 'MEDIUM', 'Medium'
         LOW = 'LOW', 'Low'
         INFO = 'INFO', 'Informational'
+        UNCLASSIFIED = 'UNCLASSIFIED', 'Unclassified'
 
     class Status(models.TextChoices):
         OPEN = 'OPEN', 'Open'

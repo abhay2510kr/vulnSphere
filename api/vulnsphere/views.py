@@ -693,7 +693,7 @@ class ProjectAssetViewSet(viewsets.ModelViewSet):
 class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ActivityLog.objects.all()
     serializer_class = ActivityLogSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
     pagination_class = StandardPagination
     
     def get_queryset(self):
@@ -702,14 +702,17 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
         
         # If accessed via /companies/{id}/activity/ - filter by company
         if company_pk:
+            # Only admins can access company-specific activity logs
+            if user.role != 'ADMIN':
+                return ActivityLog.objects.none()
             return ActivityLog.objects.filter(company__pk=company_pk).order_by('-created_at')
         
         # If accessed via /activity-logs/ (global endpoint) - only admins can access
         if user.role == 'ADMIN':
             return ActivityLog.objects.all().order_by('-created_at')
         
-        # Non-admins see all activity logs (global roles)
-        return ActivityLog.objects.all().order_by('-created_at')
+        # Non-admins have no access to activity logs
+        return ActivityLog.objects.none()
 
 
 
@@ -850,7 +853,18 @@ class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAuthenticated(), IsTesterOrAdmin()]
-        return [permissions.IsAuthenticated()]
+        # For list/retrieve actions, allow admins and testers, but not clients
+        return [permissions.IsAuthenticated(), IsTesterOrAdmin()]
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Only admins and testers can access templates
+        if user.role in ['ADMIN', 'TESTER']:
+            return VulnerabilityTemplate.objects.all()
+        
+        # Clients have no access to templates
+        return VulnerabilityTemplate.objects.none()
 
     @decorators.action(detail=True, methods=['get'])
     def download(self, request, pk=None):

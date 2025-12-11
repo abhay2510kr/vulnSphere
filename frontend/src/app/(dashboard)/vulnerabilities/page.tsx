@@ -195,6 +195,7 @@ export default function VulnerabilitiesPage() {
                             <SelectItem value="MEDIUM"><SeverityBadge severity="MEDIUM" grow /></SelectItem>
                             <SelectItem value="LOW"><SeverityBadge severity="LOW" grow /></SelectItem>
                             <SelectItem value="INFO"><SeverityBadge severity="INFO" grow /></SelectItem>
+                            <SelectItem value="UNCLASSIFIED"><SeverityBadge severity="UNCLASSIFIED" grow /></SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
@@ -222,19 +223,18 @@ export default function VulnerabilitiesPage() {
                             <TableHead>Project</TableHead>
                             <TableHead>Severity</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8">
+                                <TableCell colSpan={5} className="text-center py-8">
                                     Loading...
                                 </TableCell>
                             </TableRow>
                         ) : filteredVulns.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                     No vulnerabilities found
                                 </TableCell>
                             </TableRow>
@@ -253,15 +253,6 @@ export default function VulnerabilitiesPage() {
                                     </TableCell>
                                     <TableCell>
                                         <StatusBadge status={vuln.status} grow />
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div onClick={(e) => e.stopPropagation()}>
-                                            <Button variant="ghost" size="icon" asChild>
-                                                <Link href={`/project/${vuln.project}/vulnerabilities/${vuln.id}`}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

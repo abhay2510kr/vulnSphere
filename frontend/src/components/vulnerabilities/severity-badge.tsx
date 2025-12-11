@@ -13,6 +13,7 @@ const SEVERITY_COLORS: Record<string, string> = {
     MEDIUM: "bg-yellow-500 hover:bg-yellow-600 border-transparent text-white",
     LOW: "bg-blue-500 hover:bg-blue-600 border-transparent text-white",
     INFO: "bg-gray-500 hover:bg-gray-600 border-transparent text-white",
+    UNCLASSIFIED: "bg-purple-500 hover:bg-purple-600 border-transparent text-white",
 };
 
 export function SeverityBadge({ severity, className, grow }: SeverityBadgeProps) {

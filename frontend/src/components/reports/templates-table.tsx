@@ -10,7 +10,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { FileText, Download, Trash2, Edit } from 'lucide-react';
+import { FileText, Download, Trash2, Pencil } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import api from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
@@ -101,7 +101,7 @@ export function TemplatesTable({ templates, loading, onDelete, onEdit }: Templat
                                         variant="ghost"
                                         onClick={() => onEdit(template)}
                                     >
-                                        <Edit className="h-4 w-4" />
+                                        <Pencil className="h-4 w-4" />
                                     </Button>
                                     <Button
                                         size="sm"

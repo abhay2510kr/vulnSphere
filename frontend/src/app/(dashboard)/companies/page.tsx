@@ -217,11 +217,6 @@ export default function CompaniesPage() {
                                         {showActions && (
                                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex justify-end gap-2">
-                                                    <Button variant="ghost" size="sm" asChild>
-                                                        <Link href={`/companies/${company.id}`}>
-                                                            <Eye className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
                                                     {(isAdmin || isTester) && (
                                                         <>
                                                             <Button variant="ghost" size="sm" onClick={(e) => handleEditClick(e, company)}>
