@@ -1,5 +1,5 @@
 # Build stage
-FROM node:23-alpine as builder
+FROM node:23-alpine AS builder
 
 WORKDIR /app
 
@@ -23,11 +23,12 @@ COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application from builder
-COPY --from=builder /app/build ./build
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 # Expose port
 EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
