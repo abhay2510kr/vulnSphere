@@ -73,7 +73,7 @@ export function TemplateUploadDialog({ open, onOpenChange, onSuccess }: Template
                     <DialogHeader>
                         <DialogTitle>Upload Report Template</DialogTitle>
                         <DialogDescription>
-                            Upload a .docx template file with Jinja2 variables.
+                            Upload a .docx or .html template file with Jinja2 variables.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -111,12 +111,12 @@ export function TemplateUploadDialog({ open, onOpenChange, onSuccess }: Template
                             <Input
                                 id="file"
                                 type="file"
-                                accept=".docx"
+                                accept=".docx,.html"
                                 required
                                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                             />
                             <p className="text-xs text-muted-foreground">
-                                Upload a .docx file with Jinja2 variables like {'{{ project.title }}'}
+                                Upload a .docx or .html file with Jinja2 variables like {'{{ project.title }}'}
                             </p>
                         </div>
                     </div>

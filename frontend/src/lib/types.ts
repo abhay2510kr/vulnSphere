@@ -1,15 +1,35 @@
+export interface User {
+    id: string;
+    username: string;
+    email: string;
+    name: string;
+    role: 'ADMIN' | 'TESTER' | 'CLIENT';
+    companies: string[]; // Array of company IDs
+}
+
 export interface Company {
     id: string;
     name: string;
     slug: string;
-    // ... other fields as needed
+    contact_email?: string;
+    address?: string;
+    notes?: string;
+    is_active?: boolean;
+    created_at?: string;
+    project_count?: number;
+    asset_count?: number;
 }
 
 export interface Project {
     id: string;
     title: string;
     company: string; // company ID
-    // ...
+    status?: string;
+    engagement_type?: string;
+    start_date?: string;
+    end_date?: string;
+    summary?: string;
+    created_at?: string;
 }
 
 export interface ReportTemplate {
@@ -34,4 +54,18 @@ export interface GeneratedReport {
     is_failed: boolean;
     error_message?: string;
     created_at: string;
+}
+
+export interface Comment {
+    id: string;
+    company: string;
+    project?: string;
+    vulnerability?: string;
+    retest?: string;
+    author: string;
+    author_name?: string;
+    body_md: string;
+    is_internal: boolean;
+    created_at: string;
+    updated_at: string;
 }

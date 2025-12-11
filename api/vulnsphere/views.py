@@ -10,7 +10,7 @@ from .serializers import (
     ReportTemplateSerializer, GeneratedReportSerializer, ReportGenerationRequestSerializer
 )
 from .report_generator import ReportGenerator
-from .permissions import IsAdmin, IsAdminOrTester, IsTesterOrAdmin, CanRequestRetest
+from .permissions import IsAdmin, IsAdminOrTester, IsTesterOrAdmin, CanRequestRetest, IsCompanyMember, IsClientReadOnly
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -24,8 +24,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class CompanyViewSet(viewsets.ModelViewSet):
     """
-    Admin: Full access.
-    All authenticated users: Can view all companies (roles are global now).
+    Admin: Full access to all companies.
+    Clients/Testers: Can only view companies they are assigned to.
     """
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
@@ -34,6 +34,16 @@ class CompanyViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAdmin()]
         return [permissions.IsAuthenticated()]
+    
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Admins see all companies
+        if user.role == 'ADMIN':
+            return Company.objects.all()
+        
+        # Clients and Testers only see companies they are assigned to
+        return user.companies.all()
 
 # CompanyMembershipViewSet removed - users now have global roles
 
@@ -42,16 +52,23 @@ class CompanyScopedMixin:
     """
     Mixin to filter queryset by company in URL and verify permissions.
     Expects 'company_pk' in kwargs.
+    Filters based on user's accessible companies.
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Admin sees all? Or admin also navigating via company structure?
-        # The IsCompanyMember permission handles admin check.
-        # But we still need to filter to the specific company in the URL.
         company_pk = self.kwargs.get('company_pk')
         if not company_pk:
-             return self.queryset.none()
+            return self.queryset.none()
+        
+        user = self.request.user
+        
+        # Check if user has access to this company
+        if user.role != 'ADMIN':
+            # Clients and Testers must be assigned to the company
+            if not user.companies.filter(pk=company_pk).exists():
+                return self.queryset.none()
+        
         return self.queryset.filter(company__pk=company_pk)
 
     def get_serializer_context(self):
@@ -63,7 +80,7 @@ class CompanyScopedMixin:
 class AssetViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
     queryset = Asset.objects.all()
     serializer_class = AssetSerializer
-    permission_classes = [permissions.IsAuthenticated, IsTesterOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsClientReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'identifier', 'type']
 
@@ -72,18 +89,24 @@ class ProjectViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'summary']
-    permission_classes = [permissions.IsAuthenticated, IsTesterOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsClientReadOnly]
     
     def get_queryset(self):
         """Support both /projects/{id}/ and /companies/{cid}/projects/{id}/"""
         company_pk = self.kwargs.get('company_pk')
+        user = self.request.user
         
         if company_pk:
             # Nested access - filter by company
+            # CompanyScopedMixin already handles company access check
             return Project.objects.filter(company__pk=company_pk)
         
-        # Direct access - all users can see all projects (global roles)
-        return Project.objects.all()
+        # Direct access - filter by user's accessible companies
+        if user.role == 'ADMIN':
+            return Project.objects.all()
+        
+        # Clients and Testers only see projects from their assigned companies
+        return Project.objects.filter(company__in=user.companies.all())
 
 class VulnerabilityViewSet(viewsets.ModelViewSet):
     queryset = Vulnerability.objects.all()
@@ -97,13 +120,20 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), IsTesterOrAdmin()]
+        return [permissions.IsAuthenticated(), IsClientReadOnly()]
 
     def get_queryset(self):
         project_pk = self.kwargs.get('project_pk')
         company_pk = self.kwargs.get('company_pk')
+        user = self.request.user
+        
         if not project_pk or not company_pk:
             return Vulnerability.objects.none()
+        
+        # Check if user has access to this company
+        if user.role != 'ADMIN':
+            if not user.companies.filter(pk=company_pk).exists():
+                return Vulnerability.objects.none()
         
         # Ensure project belongs to company
         return Vulnerability.objects.filter(project__pk=project_pk, project__company__pk=company_pk)
@@ -171,27 +201,33 @@ class RetestViewSet(viewsets.ModelViewSet):
     serializer_class = RetestSerializer
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['list', 'retrieve', 'request_retest']:
             return [permissions.IsAuthenticated()]
-        # CREATE: All can request retests (REQUEST type) or add RETEST type
-        return [permissions.IsAuthenticated(), CanRequestRetest()]
+        # CREATE, UPDATE, DELETE: Only Testers and Admins
+        return [permissions.IsAuthenticated(), IsClientReadOnly()]
 
     def get_queryset(self):
         vuln_pk = self.kwargs.get('vulnerability_pk')
-        # Here we only get vuln_pk. Use lookup.
-        # But wait, how do we enforce company scope?
-        # We need to find the company from vuln ID and check membership.
+        user = self.request.user
         
-        if not vuln_pk: return Retest.objects.none()
-        return Retest.objects.filter(vulnerability__pk=vuln_pk)
+        if not vuln_pk:
+            return Retest.objects.none()
+        
+        # Filter retests by company access through vulnerability
+        queryset = Retest.objects.filter(vulnerability__pk=vuln_pk)
+        
+        # Check company access
+        if user.role != 'ADMIN':
+            queryset = queryset.filter(
+                vulnerability__project__company__in=user.companies.all()
+            )
+        
+        return queryset
 
     def check_permissions(self, request):
         super().check_permissions(request)
-        # Custom logic for checking company access if not using nested URL with company_id
-        pass
 
     def filter_queryset(self, queryset):
-        # All users can see all retests (simplified - global roles)
         return queryset
 
     def get_serializer_context(self):
@@ -200,17 +236,49 @@ class RetestViewSet(viewsets.ModelViewSet):
             context['vulnerability'] = get_object_or_404(Vulnerability, pk=self.kwargs['vulnerability_pk'])
         return context
     
+    @decorators.action(detail=False, methods=['post'], url_path='request')
+    def request_retest(self, request, vulnerability_pk=None):
+        """Allow clients to request retests"""
+        vulnerability = get_object_or_404(Vulnerability, pk=vulnerability_pk)
+        
+        # Check company access
+        if request.user.role != 'ADMIN':
+            if not request.user.companies.filter(pk=vulnerability.project.company.pk).exists():
+                return response.Response(
+                    {'error': 'You do not have access to this vulnerability'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        # Create retest request
+        notes = request.data.get('notes_md', '')
+        retest = Retest.objects.create(
+            vulnerability=vulnerability,
+            requested_by=request.user,
+            request_type='REQUEST',
+            notes_md=notes
+        )
+        
+        serializer = self.get_serializer(retest)
+        return response.Response(serializer.data, status=status.HTTP_201_CREATED)
+    
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        # All authenticated users can see all comments (simplified)
-        return Comment.objects.all()
+        user = self.request.user
+        
+        # Filter comments by company access
+        if user.role == 'ADMIN':
+            return Comment.objects.all()
+        
+        # Clients and Testers only see comments from their assigned companies
+        return Comment.objects.filter(company__in=user.companies.all())
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(author=self.request.user)
 
 class AttachmentViewSet(viewsets.ModelViewSet):
     queryset = Attachment.objects.all()
@@ -356,13 +424,17 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
 class DashboardStatsViewSet(viewsets.ViewSet):
     """
     ViewSet for dashboard statistics.
-    Returns aggregated data across all companies the user has access to.
+    Returns aggregated data across companies the user has access to.
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def _get_accessible_companies(self, user):
-        """Get companies the user has access to - all companies for all users (global roles)"""
-        return Company.objects.all()
+        """Get companies the user has access to based on role"""
+        if user.role == 'ADMIN':
+            return Company.objects.all()
+        
+        # Clients and Testers only see their assigned companies
+        return user.companies.all()
 
     @decorators.action(detail=False, methods=['get'])
     def overview(self, request):
@@ -514,11 +586,16 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'status']
 
     def get_queryset(self):
-        # Users see reports they created, or all if Admin? 
-        # Let's say all authenticated users can see non-private reports (we didn't implement private flag yet)
-        # But logically, you should see reports for companies/projects you have access to. 
-        # Since access is global for now, everyone sees everything.
-        return GeneratedReport.objects.all().order_by('-created_at')
+        user = self.request.user
+        
+        # Filter reports by accessible companies
+        if user.role == 'ADMIN':
+            return GeneratedReport.objects.all().order_by('-created_at')
+        
+        # Clients and Testers only see reports from their assigned companies
+        return GeneratedReport.objects.filter(
+            company__in=user.companies.all()
+        ).order_by('-created_at')
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

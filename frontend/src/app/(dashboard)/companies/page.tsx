@@ -13,6 +13,8 @@ import { CompanyEditDialog } from '@/components/companies/company-edit-dialog';
 import { CompanyDeleteDialog } from '@/components/companies/company-delete-dialog';
 import { Building2, Plus, Eye, Pencil, Trash2, Search } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -29,6 +31,8 @@ interface Company {
 }
 
 export default function CompaniesPage() {
+    const router = useRouter();
+    const { isAdmin, isTester, isClient, loading: authLoading } = useAuth();
     const [companies, setCompanies] = useState<Company[]>([]);
     const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
@@ -83,19 +87,27 @@ export default function CompaniesPage() {
         setCurrentPage(1); // Reset to first page on search/filter
     }, [searchQuery, statusFilter, companies]);
 
-    const handleEditClick = (company: Company) => {
+    const handleEditClick = (e: React.MouseEvent, company: Company) => {
+        e.stopPropagation();
         setSelectedCompany(company);
         setEditDialogOpen(true);
     };
 
-    const handleDeleteClick = (company: Company) => {
+    const handleDeleteClick = (e: React.MouseEvent, company: Company) => {
+        e.stopPropagation();
         setSelectedCompany(company);
         setDeleteDialogOpen(true);
+    };
+
+    const handleRowClick = (companyId: string) => {
+        router.push(`/companies/${companyId}`);
     };
 
     // Pagination logic
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const paginatedCompanies = filteredCompanies.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    const showActions = isAdmin || isTester;
 
     return (
         <div className="space-y-6">
@@ -106,10 +118,12 @@ export default function CompaniesPage() {
                         Manage and view all companies in the system.
                     </p>
                 </div>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Company
-                </Button>
+                {isAdmin && (
+                    <Button onClick={() => setCreateDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Company
+                    </Button>
+                )}
             </div>
 
             <div className="flex items-center gap-4">
@@ -149,7 +163,7 @@ export default function CompaniesPage() {
                     <p className="text-muted-foreground mb-4">
                         {searchQuery ? 'No companies found matching your search.' : 'Create your first company to get started'}
                     </p>
-                    {!searchQuery && (
+                    {!searchQuery && isAdmin && (
                         <Button onClick={() => setCreateDialogOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add Company
@@ -167,12 +181,16 @@ export default function CompaniesPage() {
                                     <TableHead>Projects</TableHead>
                                     <TableHead>Assets</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    {showActions && <TableHead className="text-right">Actions</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {paginatedCompanies.map((company) => (
-                                    <TableRow key={company.id}>
+                                    <TableRow
+                                        key={company.id}
+                                        onClick={() => handleRowClick(company.id)}
+                                        className="cursor-pointer hover:bg-muted/50"
+                                    >
                                         <TableCell className="font-medium">{company.name}</TableCell>
                                         <TableCell>{company.contact_email}</TableCell>
                                         <TableCell>
@@ -196,21 +214,27 @@ export default function CompaniesPage() {
                                                 </span>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <Link href={`/companies/${company.id}`}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(company)}>
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(company)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+                                        {showActions && (
+                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="sm" asChild>
+                                                        <Link href={`/companies/${company.id}`}>
+                                                            <Eye className="h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
+                                                    {isAdmin && (
+                                                        <>
+                                                            <Button variant="ghost" size="sm" onClick={(e) => handleEditClick(e, company)}>
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="sm" onClick={(e) => handleDeleteClick(e, company)}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -225,25 +249,29 @@ export default function CompaniesPage() {
                 </>
             )}
 
-            <CompanyCreateDialog
-                open={createDialogOpen}
-                onOpenChange={setCreateDialogOpen}
-                onSuccess={fetchCompanies}
-            />
+            {isAdmin && (
+                <>
+                    <CompanyCreateDialog
+                        open={createDialogOpen}
+                        onOpenChange={setCreateDialogOpen}
+                        onSuccess={fetchCompanies}
+                    />
 
-            <CompanyEditDialog
-                company={selectedCompany}
-                open={editDialogOpen}
-                onOpenChange={setEditDialogOpen}
-                onSuccess={fetchCompanies}
-            />
+                    <CompanyEditDialog
+                        company={selectedCompany}
+                        open={editDialogOpen}
+                        onOpenChange={setEditDialogOpen}
+                        onSuccess={fetchCompanies}
+                    />
 
-            <CompanyDeleteDialog
-                company={selectedCompany}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-                onSuccess={fetchCompanies}
-            />
+                    <CompanyDeleteDialog
+                        company={selectedCompany}
+                        open={deleteDialogOpen}
+                        onOpenChange={setDeleteDialogOpen}
+                        onSuccess={fetchCompanies}
+                    />
+                </>
+            )}
         </div>
     );
 }

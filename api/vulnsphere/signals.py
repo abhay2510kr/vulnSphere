@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, post_migrate, post_delete
 from django.dispatch import receiver
-from .models import VulnerabilityAsset, ProjectAsset, ActivityLog, Company, Project, Vulnerability, Asset, Comment, User
+from .models import VulnerabilityAsset, ProjectAsset, ActivityLog, Company, Project, Vulnerability, Asset, Comment, User, Retest
 import threading
 
 
@@ -225,3 +225,41 @@ def log_user_activity(sender, instance, created, **kwargs):
                 'role': instance.role
             }
         )
+
+
+@receiver(post_save, sender=Retest)
+def log_retest_activity(sender, instance, created, **kwargs):
+    """Log Retest CREATE and UPDATE"""
+    action = 'CREATED' if created else 'UPDATED'
+    
+    ActivityLog.objects.create(
+        company=instance.vulnerability.project.company,
+        user=get_current_user(),
+        entity_type='RETEST',
+        entity_id=instance.pk,
+        action=action,
+        metadata={
+            'vulnerability_id': str(instance.vulnerability.pk),
+            'vulnerability_title': instance.vulnerability.title,
+            'request_type': instance.request_type,
+            'status': instance.status if instance.status else None,
+            'requested_by': str(instance.requested_by.pk) if instance.requested_by else None,
+            'performed_by': str(instance.performed_by.pk) if instance.performed_by else None
+        }
+    )
+
+
+@receiver(post_delete, sender=Retest)
+def log_retest_delete(sender, instance, **kwargs):
+    """Log Retest DELETE"""
+    ActivityLog.objects.create(
+        company=instance.vulnerability.project.company,
+        user=get_current_user(),
+        entity_type='RETEST',
+        entity_id=instance.pk,
+        action='DELETED',
+        metadata={
+            'vulnerability_id': str(instance.vulnerability.pk),
+            'vulnerability_title': instance.vulnerability.title
+        }
+    )

@@ -10,9 +10,13 @@ import { ReportGeneratorDialog } from '@/components/reports/report-generator-dia
 import api from '@/lib/api';
 import { GeneratedReport } from '@/lib/types';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ReportsPage() {
+    const router = useRouter();
+    const { canEdit, isClient, loading: authLoading } = useAuth();
     const [reports, setReports] = useState<GeneratedReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -25,6 +29,13 @@ export default function ReportsPage() {
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const pageSize = 10;
+
+    // Redirect clients away from this page
+    useEffect(() => {
+        if (!authLoading && isClient) {
+            router.push('/dashboard');
+        }
+    }, [isClient, authLoading, router]);
 
     const fetchReports = async () => {
         setLoading(true);
@@ -117,18 +128,20 @@ export default function ReportsPage() {
                         Generate and manage vulnerability reports for your projects.
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" asChild>
-                        <Link href="/reports/templates">
-                            <Settings className="mr-2 h-4 w-4" />
-                            Manage Templates
-                        </Link>
-                    </Button>
-                    <Button onClick={() => setDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Report
-                    </Button>
-                </div>
+                {canEdit && (
+                    <div className="flex gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href="/reports/templates">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Manage Templates
+                            </Link>
+                        </Button>
+                        <Button onClick={() => setDialogOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Report
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <div className="flex gap-4">

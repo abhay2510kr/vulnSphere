@@ -8,12 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Search, Eye, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { TablePagination } from '@/components/ui/table-pagination';
 import api from '@/lib/api';
 import { ProjectEditDialog } from '@/components/projects/project-edit-dialog';
 import { ProjectDeleteDialog } from '@/components/projects/project-delete-dialog';
 import { ProjectCreateDialog } from '@/components/projects/project-create-dialog';
 import { Plus } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { formatStatus } from '@/lib/formatters';
 
 interface Company {
     id: string;
@@ -35,6 +38,8 @@ interface Project {
 }
 
 export default function ProjectsPage() {
+    const router = useRouter();
+    const { isAdmin, canEdit } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
@@ -100,17 +105,23 @@ export default function ProjectsPage() {
             FINAL: 'default',
             ARCHIVED: 'destructive',
         };
-        return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
+        return <Badge variant={variants[status] || 'default'}>{formatStatus(status)}</Badge>;
     };
 
-    const handleEdit = (project: Project) => {
+    const handleEdit = (e: React.MouseEvent, project: Project) => {
+        e.stopPropagation();
         setSelectedProject(project);
         setEditDialogOpen(true);
     };
 
-    const handleDelete = (project: Project) => {
+    const handleDelete = (e: React.MouseEvent, project: Project) => {
+        e.stopPropagation();
         setSelectedProject(project);
         setDeleteDialogOpen(true);
+    };
+
+    const handleRowClick = (projectId: string) => {
+        router.push(`/project/${projectId}`);
     };
 
     return (
@@ -122,10 +133,12 @@ export default function ProjectsPage() {
                         View and filter all projects across companies.
                     </p>
                 </div>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Project
-                </Button>
+                {canEdit && (
+                    <Button onClick={() => setCreateDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Project
+                    </Button>
+                )}
             </div>
 
             <div className="flex flex-col md:flex-row gap-4">
@@ -175,7 +188,7 @@ export default function ProjectsPage() {
                             <TableHead>Status</TableHead>
                             <TableHead>Start Date</TableHead>
                             <TableHead>End Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            {canEdit && <TableHead className="text-right">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -193,28 +206,34 @@ export default function ProjectsPage() {
                             </TableRow>
                         ) : (
                             projects.map((project) => (
-                                <TableRow key={project.id}>
+                                <TableRow
+                                    key={project.id}
+                                    onClick={() => handleRowClick(project.id)}
+                                    className="cursor-pointer hover:bg-muted/50"
+                                >
                                     <TableCell className="font-medium">{project.title}</TableCell>
                                     <TableCell>{getCompanyName(project.company)}</TableCell>
                                     <TableCell>{project.engagement_type}</TableCell>
                                     <TableCell>{getStatusBadge(project.status)}</TableCell>
                                     <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
                                     <TableCell>{new Date(project.end_date).toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="sm" asChild>
-                                                <Link href={`/project/${project.id}`}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                            <Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="sm" onClick={() => handleDelete(project)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
+                                    {canEdit && (
+                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href={`/project/${project.id}`}>
+                                                        <Eye className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                                <Button variant="ghost" size="sm" onClick={(e) => handleEdit(e, project)}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="sm" onClick={(e) => handleDelete(e, project)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))
                         )}

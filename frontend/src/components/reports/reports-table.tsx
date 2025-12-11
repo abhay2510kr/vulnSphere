@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import api from '@/lib/api';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ReportsTableProps {
     reports: GeneratedReport[];
@@ -23,6 +24,8 @@ interface ReportsTableProps {
 }
 
 export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) {
+    const { isAdmin, isTester, canDelete } = useAuth();
+
     if (loading) {
         return <div className="text-center py-8">Loading reports...</div>;
     }
@@ -59,6 +62,8 @@ export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) 
         }
     };
 
+    const showActions = canDelete;
+
     return (
         <div className="rounded-md border">
             <Table>
@@ -70,12 +75,15 @@ export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) 
                         <TableHead>Scope</TableHead>
                         <TableHead>Format</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        {showActions && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {reports.map((report) => (
-                        <TableRow key={report.id}>
+                        <TableRow
+                            key={report.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                        >
                             <TableCell>
                                 {formatDistanceToNow(new Date(report.created_at), { addSuffix: true })}
                             </TableCell>
@@ -129,27 +137,29 @@ export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) 
                                     <Badge variant="default" className="bg-green-600">Ready</Badge>
                                 )}
                             </TableCell>
-                            <TableCell className="text-right space-x-2">
-                                {!report.is_failed && report.file && (
+                            {showActions && (
+                                <TableCell className="text-right space-x-2" onClick={(e) => e.stopPropagation()}>
+                                    {!report.is_failed && report.file && (
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                                const filename = report.file ? report.file.split('/').pop() : `report-${report.id}.${report.format.toLowerCase()}`;
+                                                handleDownload(report.id, filename || 'report');
+                                            }}
+                                        >
+                                            <Download className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                     <Button
                                         size="sm"
                                         variant="ghost"
-                                        onClick={() => {
-                                            const filename = report.file ? report.file.split('/').pop() : `report-${report.id}.${report.format.toLowerCase()}`;
-                                            handleDownload(report.id, filename || 'report');
-                                        }}
+                                        onClick={() => onDelete(report.id)}
                                     >
-                                        <Download className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
-                                )}
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => onDelete(report.id)}
-                                >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </TableCell>
+                                </TableCell>
+                            )}
                         </TableRow>
                     ))}
                 </TableBody>

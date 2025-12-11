@@ -7,6 +7,7 @@ export interface User {
     name: string;
     role: 'ADMIN' | 'TESTER' | 'CLIENT';
     is_active: boolean;
+    companies: string[]; // Array of company IDs
 }
 
 /**

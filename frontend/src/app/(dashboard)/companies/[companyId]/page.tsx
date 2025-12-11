@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,8 @@ import { Plus, FileText, Server, Pencil, Trash2, Eye, Save, X } from 'lucide-rea
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/use-auth';
+import { formatStatus, formatAssetType } from '@/lib/formatters';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -59,7 +61,9 @@ interface Asset {
 
 export default function CompanyDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const companyId = params.companyId as string;
+    const { isAdmin, canEdit } = useAuth();
 
     const [company, setCompany] = useState<Company | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -111,22 +115,30 @@ export default function CompanyDetailPage() {
         fetchCompanyData();
     }, [companyId]);
 
-    const handleProjectEdit = (project: Project) => {
+    const handleProjectEdit = (e: React.MouseEvent, project: Project) => {
+        e.stopPropagation();
         setSelectedProject(project);
         setProjectEditDialogOpen(true);
     };
 
-    const handleProjectDelete = (project: Project) => {
+    const handleProjectDelete = (e: React.MouseEvent, project: Project) => {
+        e.stopPropagation();
         setSelectedProject(project);
         setProjectDeleteDialogOpen(true);
     };
 
-    const handleAssetEdit = (asset: Asset) => {
+    const handleProjectRowClick = (projectId: string) => {
+        router.push(`/project/${projectId}`);
+    };
+
+    const handleAssetEdit = (e: React.MouseEvent, asset: Asset) => {
+        e.stopPropagation();
         setSelectedAsset(asset);
         setAssetEditDialogOpen(true);
     };
 
-    const handleAssetDelete = (asset: Asset) => {
+    const handleAssetDelete = (e: React.MouseEvent, asset: Asset) => {
+        e.stopPropagation();
         setSelectedAsset(asset);
         setAssetDeleteDialogOpen(true);
     };
@@ -142,15 +154,7 @@ export default function CompanyDetailPage() {
     };
 
     const getTypeLabel = (type: string) => {
-        const labels: Record<string, string> = {
-            'WEB_APP': 'Web App',
-            'API': 'API',
-            'SERVER': 'Server',
-            'MOBILE_APP': 'Mobile App',
-            'NETWORK_DEVICE': 'Network Device',
-            'OTHER': 'Other'
-        };
-        return labels[type] || type;
+        return formatAssetType(type);
     };
 
     const handleSaveCompany = async () => {
@@ -246,10 +250,12 @@ export default function CompanyDetailPage() {
                         </Button>
                     </div>
                 ) : (
-                    <Button variant="outline" onClick={toggleEdit}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit Company
-                    </Button>
+                    !isEditing && canEdit && (
+                        <Button variant="outline" onClick={toggleEdit}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit Company
+                        </Button>
+                    )
                 )}
             </div>
 
@@ -300,10 +306,12 @@ export default function CompanyDetailPage() {
                 <TabsContent value="projects" className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-semibold">Projects</h2>
-                        <Button onClick={() => setProjectDialogOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            New Project
-                        </Button>
+                        {canEdit && (
+                            <Button onClick={() => setProjectDialogOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                New Project
+                            </Button>
+                        )}
                     </div>
 
                     {projects.length === 0 ? (
@@ -328,37 +336,43 @@ export default function CompanyDetailPage() {
                                             <TableHead>Type</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead>Dates</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
+                                            {canEdit && <TableHead className="text-right">Actions</TableHead>}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {paginatedProjects.map((project) => (
-                                            <TableRow key={project.id}>
+                                            <TableRow
+                                                key={project.id}
+                                                onClick={() => handleProjectRowClick(project.id)}
+                                                className="cursor-pointer hover:bg-muted/50"
+                                            >
                                                 <TableCell className="font-medium">{project.title}</TableCell>
                                                 <TableCell>{project.engagement_type}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={getStatusColor(project.status)}>
-                                                        {project.status.replace('_', ' ')}
+                                                        {formatStatus(project.status)}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
                                                     {new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button variant="ghost" size="sm" asChild>
-                                                            <Link href={`/project/${project.id}`}>
-                                                                <Eye className="h-4 w-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button variant="ghost" size="sm" onClick={() => handleProjectEdit(project)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="sm" onClick={() => handleProjectDelete(project)}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
+                                                {canEdit && (
+                                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="ghost" size="sm" asChild>
+                                                                <Link href={`/project/${project.id}`}>
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Link>
+                                                            </Button>
+                                                            <Button variant="ghost" size="sm" onClick={(e) => handleProjectEdit(e, project)}>
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="sm" onClick={(e) => handleProjectDelete(e, project)}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -377,10 +391,12 @@ export default function CompanyDetailPage() {
                 <TabsContent value="assets" className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-semibold">Assets</h2>
-                        <Button onClick={() => setAssetDialogOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Asset
-                        </Button>
+                        {canEdit && (
+                            <Button onClick={() => setAssetDialogOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Asset
+                            </Button>
+                        )}
                     </div>
 
                     {assets.length === 0 ? (
@@ -406,12 +422,12 @@ export default function CompanyDetailPage() {
                                             <TableHead>Identifier</TableHead>
                                             <TableHead>Environment</TableHead>
                                             <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
+                                            {canEdit && <TableHead className="text-right">Actions</TableHead>}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {paginatedAssets.map((asset) => (
-                                            <TableRow key={asset.id}>
+                                            <TableRow key={asset.id} className="cursor-pointer hover:bg-muted/50">
                                                 <TableCell className="font-medium">{asset.name}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="secondary">{getTypeLabel(asset.type)}</Badge>
@@ -429,16 +445,18 @@ export default function CompanyDetailPage() {
                                                         </Badge>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button variant="ghost" size="sm" onClick={() => handleAssetEdit(asset)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="sm" onClick={() => handleAssetDelete(asset)}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
+                                                {canEdit && (
+                                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="ghost" size="sm" onClick={(e) => handleAssetEdit(e, asset)}>
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="sm" onClick={(e) => handleAssetDelete(e, asset)}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
