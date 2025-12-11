@@ -20,8 +20,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_API: vulnsphere-api
-  IMAGE_NAME_FRONTEND: vulnsphere-frontend
+  IMAGE_NAME_API: ${{ github.repository_owner }}/vulnsphere-api
+  IMAGE_NAME_FRONTEND: ${{ github.repository_owner }}/vulnsphere-frontend
 
 jobs:
   build-api:
