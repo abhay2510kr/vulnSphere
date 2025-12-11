@@ -50,8 +50,7 @@ class ReportingAPITests(APITestCase):
         data = {
             'name': 'API Server',
             'type': 'API',
-            'identifier': 'api.example.com',
-            'environment': 'PRODUCTION'
+            'identifier': 'api.example.com'
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -61,7 +60,7 @@ class ReportingAPITests(APITestCase):
     def test_client_cannot_create_asset(self):
         self.client.force_authenticate(user=self.client_user)
         url = reverse('company-assets-list', kwargs={'company_pk': self.company.pk})
-        data = {'name': 'Hack', 'type': 'WEB_APP', 'identifier': 'hacked', 'environment': 'TEST'}
+        data = {'name': 'Hack', 'type': 'WEB_APP', 'identifier': 'hacked'}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 

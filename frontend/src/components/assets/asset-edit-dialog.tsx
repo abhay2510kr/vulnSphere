@@ -23,7 +23,6 @@ interface Asset {
     name: string;
     type: string;
     identifier: string;
-    environment: string;
     description: string;
 }
 
@@ -41,7 +40,6 @@ export function AssetEditDialog({ asset, open, onOpenChange, onSuccess }: AssetE
         name: '',
         type: 'WEB_APP',
         identifier: '',
-        environment: 'PRODUCTION',
         description: '',
     });
 
@@ -51,7 +49,6 @@ export function AssetEditDialog({ asset, open, onOpenChange, onSuccess }: AssetE
                 name: asset.name,
                 type: asset.type,
                 identifier: asset.identifier,
-                environment: asset.environment,
                 description: asset.description || '',
             });
         }
@@ -101,44 +98,24 @@ export function AssetEditDialog({ asset, open, onOpenChange, onSuccess }: AssetE
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-type">Type *</Label>
-                                <Select
-                                    value={formData.type}
-                                    onValueChange={(value) => setFormData({ ...formData, type: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="WEB_APP">Web Application</SelectItem>
-                                        <SelectItem value="API">API</SelectItem>
-                                        <SelectItem value="SERVER">Server</SelectItem>
-                                        <SelectItem value="MOBILE_APP">Mobile Application</SelectItem>
-                                        <SelectItem value="NETWORK_DEVICE">Network Device</SelectItem>
-                                        <SelectItem value="OTHER">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-environment">Environment *</Label>
-                                <Select
-                                    value={formData.environment}
-                                    onValueChange={(value) => setFormData({ ...formData, environment: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="PRODUCTION">Production</SelectItem>
-                                        <SelectItem value="STAGING">Staging</SelectItem>
-                                        <SelectItem value="DEVELOPMENT">Development</SelectItem>
-                                        <SelectItem value="TEST">Test</SelectItem>
-                                        <SelectItem value="OTHER">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-type">Type *</Label>
+                            <Select
+                                value={formData.type}
+                                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="WEB_APP">Web Application</SelectItem>
+                                    <SelectItem value="API">API</SelectItem>
+                                    <SelectItem value="SERVER">Server</SelectItem>
+                                    <SelectItem value="MOBILE_APP">Mobile Application</SelectItem>
+                                    <SelectItem value="NETWORK_DEVICE">Network Device</SelectItem>
+                                    <SelectItem value="OTHER">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="edit-identifier">Identifier *</Label>

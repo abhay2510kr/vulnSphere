@@ -16,7 +16,8 @@ import { ProjectDeleteDialog } from '@/components/projects/project-delete-dialog
 import { AssetCreateDialog } from '@/components/assets/asset-create-dialog';
 import { AssetEditDialog } from '@/components/assets/asset-edit-dialog';
 import { AssetDeleteDialog } from '@/components/assets/asset-delete-dialog';
-import { Plus, FileText, Server, Pencil, Trash2, Eye, Save, X } from 'lucide-react';
+import { Plus, FileText, Server, Pencil, Trash2, Eye, Save, X, Upload } from 'lucide-react';
+import { CSVImportDialog } from '@/components/ui/csv-import-dialog';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,7 +55,6 @@ interface Asset {
     name: string;
     type: string;
     identifier: string;
-    environment: string;
     description: string;
     is_active: boolean;
 }
@@ -82,6 +82,7 @@ export default function CompanyDetailPage() {
     const [assetDeleteDialogOpen, setAssetDeleteDialogOpen] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
     const [assetPage, setAssetPage] = useState(1);
+    const [assetImportDialogOpen, setAssetImportDialogOpen] = useState(false);
 
     // Edit State
     const [isEditing, setIsEditing] = useState(false);
@@ -320,10 +321,6 @@ export default function CompanyDetailPage() {
                                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                                 <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
                                 <p className="text-muted-foreground mb-4">Create your first project to get started</p>
-                                <Button onClick={() => setProjectDialogOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    New Project
-                                </Button>
                             </CardContent>
                         </Card>
                     ) : (
@@ -392,10 +389,16 @@ export default function CompanyDetailPage() {
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-semibold">Assets</h2>
                         {canEdit && (
-                            <Button onClick={() => setAssetDialogOpen(true)}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add Asset
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setAssetImportDialogOpen(true)}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Import CSV
+                                </Button>
+                                <Button onClick={() => setAssetDialogOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Asset
+                                </Button>
+                            </div>
                         )}
                     </div>
 
@@ -405,10 +408,6 @@ export default function CompanyDetailPage() {
                                 <Server className="h-12 w-12 text-muted-foreground mb-4" />
                                 <h3 className="text-lg font-semibold mb-2">No assets yet</h3>
                                 <p className="text-muted-foreground mb-4">Add an asset to track in this company</p>
-                                <Button onClick={() => setAssetDialogOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Asset
-                                </Button>
                             </CardContent>
                         </Card>
                     ) : (
@@ -420,7 +419,6 @@ export default function CompanyDetailPage() {
                                             <TableHead>Name</TableHead>
                                             <TableHead>Type</TableHead>
                                             <TableHead>Identifier</TableHead>
-                                            <TableHead>Environment</TableHead>
                                             <TableHead>Status</TableHead>
                                             {canEdit && <TableHead className="text-right">Actions</TableHead>}
                                         </TableRow>
@@ -433,7 +431,6 @@ export default function CompanyDetailPage() {
                                                     <Badge variant="secondary">{getTypeLabel(asset.type)}</Badge>
                                                 </TableCell>
                                                 <TableCell>{asset.identifier}</TableCell>
-                                                <TableCell>{asset.environment}</TableCell>
                                                 <TableCell>
                                                     {asset.is_active ? (
                                                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -513,6 +510,16 @@ export default function CompanyDetailPage() {
                 open={assetDeleteDialogOpen}
                 onOpenChange={setAssetDeleteDialogOpen}
                 onSuccess={fetchCompanyData}
+            />
+
+            <CSVImportDialog
+                open={assetImportDialogOpen}
+                onOpenChange={setAssetImportDialogOpen}
+                onSuccess={fetchCompanyData}
+                title="Import Assets"
+                description="Upload a CSV file to bulk import assets."
+                templateEndpoint={`/companies/${companyId}/assets/csv-template/`}
+                importEndpoint={`/companies/${companyId}/assets/bulk-import/`}
             />
         </div>
 

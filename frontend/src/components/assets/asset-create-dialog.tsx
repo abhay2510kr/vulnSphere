@@ -31,7 +31,6 @@ export function AssetCreateDialog({ companyId, open, onOpenChange, onSuccess }: 
         name: '',
         type: 'WEB_APP',
         identifier: '',
-        environment: 'PRODUCTION',
         description: '',
     });
 
@@ -48,7 +47,6 @@ export function AssetCreateDialog({ companyId, open, onOpenChange, onSuccess }: 
                 name: '',
                 type: 'WEB_APP',
                 identifier: '',
-                environment: 'PRODUCTION',
                 description: '',
             });
         } catch (err: any) {
@@ -87,44 +85,24 @@ export function AssetCreateDialog({ companyId, open, onOpenChange, onSuccess }: 
                                 placeholder="e.g., Production API Server"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="type">Type *</Label>
-                                <Select
-                                    value={formData.type}
-                                    onValueChange={(value) => setFormData({ ...formData, type: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="WEB_APP">Web Application</SelectItem>
-                                        <SelectItem value="API">API</SelectItem>
-                                        <SelectItem value="SERVER">Server</SelectItem>
-                                        <SelectItem value="MOBILE_APP">Mobile Application</SelectItem>
-                                        <SelectItem value="NETWORK_DEVICE">Network Device</SelectItem>
-                                        <SelectItem value="OTHER">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="environment">Environment *</Label>
-                                <Select
-                                    value={formData.environment}
-                                    onValueChange={(value) => setFormData({ ...formData, environment: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="PRODUCTION">Production</SelectItem>
-                                        <SelectItem value="STAGING">Staging</SelectItem>
-                                        <SelectItem value="DEVELOPMENT">Development</SelectItem>
-                                        <SelectItem value="TEST">Test</SelectItem>
-                                        <SelectItem value="OTHER">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="type">Type *</Label>
+                            <Select
+                                value={formData.type}
+                                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="WEB_APP">Web Application</SelectItem>
+                                    <SelectItem value="API">API</SelectItem>
+                                    <SelectItem value="SERVER">Server</SelectItem>
+                                    <SelectItem value="MOBILE_APP">Mobile Application</SelectItem>
+                                    <SelectItem value="NETWORK_DEVICE">Network Device</SelectItem>
+                                    <SelectItem value="OTHER">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="identifier">Identifier *</Label>

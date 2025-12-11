@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     User, Company,
     Asset, Project, Vulnerability, VulnerabilityAsset, Retest, Comment, Attachment, ActivityLog, ProjectAsset,
-    ReportTemplate, GeneratedReport
+    ReportTemplate, GeneratedReport, VulnerabilityTemplate
 )
 
 class UserSerializer(serializers.ModelSerializer):
@@ -71,7 +71,7 @@ class CompanySerializer(serializers.ModelSerializer):
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
-        fields = ['id', 'company', 'name', 'type', 'identifier', 'environment', 'description', 
+        fields = ['id', 'company', 'name', 'type', 'identifier', 'description', 
                   'is_active', 'created_at', 'updated_at']
         read_only_fields = ['company']
 
@@ -232,6 +232,17 @@ class ReportTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportTemplate
         fields = ['id', 'name', 'description', 'file', 'created_at', 'updated_at']
+
+class VulnerabilityTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VulnerabilityTemplate
+        fields = ['id', 'title', 'severity', 'cvss_base_score', 'cvss_vector', 'details_md', 'references', 'created_at', 'updated_at']
+        read_only_fields = ['created_by']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['created_by'] = user
+        return super().create(validated_data)
 
 class GeneratedReportSerializer(serializers.ModelSerializer):
     template_name = serializers.CharField(source='template.name', read_only=True)

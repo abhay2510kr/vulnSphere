@@ -94,18 +94,10 @@ class Asset(models.Model):
         NETWORK_DEVICE = 'NETWORK_DEVICE', 'Network Device'
         OTHER = 'OTHER', 'Other'
 
-    class Environment(models.TextChoices):
-        PRODUCTION = 'PRODUCTION', 'Production'
-        STAGING = 'STAGING', 'Staging'
-        DEVELOPMENT = 'DEVELOPMENT', 'Development'
-        TEST = 'TEST', 'Test'
-        OTHER = 'OTHER', 'Other'
-
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='assets')
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=20, choices=Type.choices)
     identifier = models.CharField(max_length=255)
-    environment = models.CharField(max_length=20, choices=Environment.choices, blank=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -270,6 +262,21 @@ class ReportTemplate(models.Model):
 
     def __str__(self):
         return self.name
+
+class VulnerabilityTemplate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    severity = models.CharField(max_length=20, choices=Vulnerability.Severity.choices)
+    cvss_base_score = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
+    cvss_vector = models.CharField(max_length=100, blank=True)
+    details_md = models.TextField(help_text='Markdown with sections: Description, Impact, Likelihood, Proof of Concept, Steps to Reproduce, Remediation')
+    references = models.JSONField(default=list, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_templates')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
 
 class GeneratedReport(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

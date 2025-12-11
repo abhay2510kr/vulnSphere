@@ -4,7 +4,7 @@ from .views import (
     UserViewSet, CompanyViewSet,
     AssetViewSet, ProjectViewSet, VulnerabilityViewSet, VulnerabilityAssetViewSet, RetestViewSet, 
     CommentViewSet, AttachmentViewSet, ActivityLogViewSet, ProjectAssetViewSet, DashboardStatsViewSet,
-    ReportTemplateViewSet, GeneratedReportViewSet
+    ReportTemplateViewSet, GeneratedReportViewSet, VulnerabilityTemplateViewSet
 )
 
 router = routers.DefaultRouter()
@@ -45,6 +45,7 @@ router.register(r'activity-logs', ActivityLogViewSet, basename='activity-logs')
 # Reports
 router.register(r'report-templates', ReportTemplateViewSet)
 router.register(r'generated-reports', GeneratedReportViewSet)
+router.register(r'vulnerability-templates', VulnerabilityTemplateViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

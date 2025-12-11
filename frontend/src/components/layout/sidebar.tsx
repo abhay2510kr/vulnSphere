@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { LayoutDashboard, Building2, Shield, FileText, Settings, LogOut, Sun, Moon, Users, ShieldAlert, Activity, FolderKanban } from 'lucide-react';
+import { LayoutDashboard, Building2, Shield, FileText, Settings, LogOut, Sun, Moon, Users, ShieldAlert, Activity, FolderKanban, Copy } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
@@ -70,14 +70,22 @@ export function Sidebar({ className }: SidebarProps) {
                                 Vulnerabilities
                             </Link>
                         </Button>
-                        {/* Hide Reports from clients */}
+                        {/* Hide Templates and Reports from clients */}
                         {currentUser && currentUser.role !== 'CLIENT' && (
-                            <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/reports' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
-                                <Link href="/reports">
-                                    <FileText className="mr-3 h-4 w-4" />
-                                    Reports
-                                </Link>
-                            </Button>
+                            <>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/templates' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                                    <Link href="/templates">
+                                        <Copy className="mr-3 h-4 w-4" />
+                                        Templates
+                                    </Link>
+                                </Button>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/reports' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                                    <Link href="/reports">
+                                        <FileText className="mr-3 h-4 w-4" />
+                                        Reports
+                                    </Link>
+                                </Button>
+                            </>
                         )}
                     </div>
                 </div>

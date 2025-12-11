@@ -22,8 +22,8 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ('name', 'company', 'type', 'identifier', 'environment', 'is_active')
-    list_filter = ('type', 'environment', 'is_active', 'company')
+    list_display = ('name', 'company', 'type', 'identifier', 'is_active')
+    list_filter = ('type', 'is_active', 'company')
     search_fields = ('name', 'identifier')
 
 @admin.register(Project)

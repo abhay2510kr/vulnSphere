@@ -2,12 +2,13 @@ from rest_framework import viewsets, permissions, filters, decorators, response,
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 
-from .models import User, Company, Asset, Project, Vulnerability, VulnerabilityAsset, Retest, Comment, Attachment, ActivityLog, ProjectAsset, ReportTemplate, GeneratedReport
+from .models import User, Company, Asset, Project, Vulnerability, VulnerabilityAsset, Retest, Comment, Attachment, ActivityLog, ProjectAsset, ReportTemplate, GeneratedReport, VulnerabilityTemplate
 from .serializers import (
     UserSerializer, CompanySerializer,
     AssetSerializer, ProjectSerializer, VulnerabilitySerializer, VulnerabilityAssetSerializer,
     RetestSerializer, CommentSerializer, AttachmentSerializer, ActivityLogSerializer,
-    ReportTemplateSerializer, GeneratedReportSerializer, ReportGenerationRequestSerializer
+    ReportTemplateSerializer, GeneratedReportSerializer, ReportGenerationRequestSerializer,
+    VulnerabilityTemplateSerializer
 )
 from .report_generator import ReportGenerator
 from .permissions import IsAdmin, IsAdminOrTester, IsTesterOrAdmin, CanRequestRetest, IsCompanyMember, IsClientReadOnly
@@ -91,6 +92,80 @@ class AssetViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
     pagination_class = StandardPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'identifier', 'type']
+
+    @decorators.action(detail=False, methods=['get'], url_path='csv-template')
+    def csv_template(self, request, **kwargs):
+        """Download CSV template for bulk importing assets"""
+        from django.http import HttpResponse
+        import csv
+        import io
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['name', 'type', 'identifier', 'description', 'is_active'])
+        writer.writerow(['Main Web App', 'WEB_APP', 'https://example.com', 'Production web application', 'true'])
+        writer.writerow(['API Server', 'API', 'api.example.com', 'REST API backend', 'true'])
+        
+        output.seek(0)
+        resp = HttpResponse(output.read(), content_type='text/csv')
+        resp['Content-Disposition'] = 'attachment; filename="assets_import.csv"'
+        return resp
+
+    @decorators.action(detail=False, methods=['post'], url_path='bulk-import')
+    def bulk_import(self, request, **kwargs):
+        """Bulk import assets from CSV"""
+        import csv
+        import io
+        
+        company_pk = self.kwargs.get('company_pk')
+        if not company_pk:
+            return response.Response({'error': 'Company context required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        company = get_object_or_404(Company, pk=company_pk)
+        
+        file = request.FILES.get('file')
+        if not file:
+            return response.Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not file.name.endswith('.csv'):
+            return response.Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            content = file.read().decode('utf-8')
+            reader = csv.DictReader(io.StringIO(content))
+            
+            created = []
+            errors = []
+            valid_types = ['WEB_APP', 'SERVER', 'API', 'MOBILE_APP', 'NETWORK_DEVICE', 'OTHER']
+            
+            for row_num, row in enumerate(reader, start=2):
+                try:
+                    asset_type = row.get('type', 'OTHER').strip().upper()
+                    if asset_type not in valid_types:
+                        asset_type = 'OTHER'
+                    
+                    is_active = row.get('is_active', 'true').strip().lower() in ['true', '1', 'yes']
+                    
+                    asset = Asset.objects.create(
+                        company=company,
+                        name=row['name'].strip(),
+                        type=asset_type,
+                        identifier=row.get('identifier', '').strip(),
+                        description=row.get('description', '').strip(),
+                        is_active=is_active
+                    )
+                    created.append({'id': str(asset.id), 'name': asset.name})
+                except Exception as e:
+                    errors.append({'row': row_num, 'error': str(e)})
+            
+            return response.Response({
+                'created': len(created),
+                'errors': errors,
+                'items': created
+            }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return response.Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ProjectViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
     queryset = Project.objects.all()
@@ -185,6 +260,100 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
         )
         
         return response.Response({'status': 'updated', 'new_status': new_status})
+
+    @decorators.action(detail=False, methods=['get'], url_path='csv-template')
+    def csv_template(self, request, **kwargs):
+        """Download CSV template for bulk importing vulnerabilities"""
+        from django.http import HttpResponse
+        import csv
+        import io
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['title', 'severity', 'status', 'cvss_base_score', 'cvss_vector', 'details_md', 'references'])
+        writer.writerow(['SQL Injection in Login', 'HIGH', 'OPEN', '8.5', 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H', 
+                        '## Description\nSQL injection found in the login form...', 'https://owasp.org/sqli'])
+        
+        output.seek(0)
+        resp = HttpResponse(output.read(), content_type='text/csv')
+        resp['Content-Disposition'] = 'attachment; filename="vulnerabilities_import.csv"'
+        return resp
+
+    @decorators.action(detail=False, methods=['post'], url_path='bulk-import')
+    def bulk_import(self, request, **kwargs):
+        """Bulk import vulnerabilities from CSV"""
+        import csv
+        import io
+        
+        project_pk = self.kwargs.get('project_pk')
+        company_pk = self.kwargs.get('company_pk')
+        
+        if not project_pk or not company_pk:
+            return response.Response({'error': 'Project context required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        project = get_object_or_404(Project, pk=project_pk, company__pk=company_pk)
+        
+        file = request.FILES.get('file')
+        if not file:
+            return response.Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not file.name.endswith('.csv'):
+            return response.Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            content = file.read().decode('utf-8')
+            reader = csv.DictReader(io.StringIO(content))
+            
+            created = []
+            errors = []
+            valid_severities = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
+            valid_statuses = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'ACCEPTED_RISK', 'FALSE_POSITIVE', 'RETEST_PENDING', 'RETEST_FAILED']
+            
+            for row_num, row in enumerate(reader, start=2):
+                try:
+                    severity = row.get('severity', 'MEDIUM').strip().upper()
+                    if severity not in valid_severities:
+                        severity = 'MEDIUM'
+                    
+                    vuln_status = row.get('status', 'OPEN').strip().upper()
+                    if vuln_status not in valid_statuses:
+                        vuln_status = 'OPEN'
+                    
+                    # Parse references
+                    refs = row.get('references', '')
+                    if isinstance(refs, str) and refs:
+                        references = [r.strip() for r in refs.split(',') if r.strip()]
+                    else:
+                        references = []
+                    
+                    # Parse CVSS score
+                    cvss_score = row.get('cvss_base_score', '').strip()
+                    cvss_score = float(cvss_score) if cvss_score else None
+                    
+                    vuln = Vulnerability.objects.create(
+                        project=project,
+                        title=row['title'].strip(),
+                        severity=severity,
+                        status=vuln_status,
+                        cvss_base_score=cvss_score,
+                        cvss_vector=row.get('cvss_vector', '').strip(),
+                        details_md=row.get('details_md', '').strip(),
+                        references=references,
+                        created_by=request.user,
+                        last_edited_by=request.user
+                    )
+                    created.append({'id': str(vuln.id), 'title': vuln.title})
+                except Exception as e:
+                    errors.append({'row': row_num, 'error': str(e)})
+            
+            return response.Response({
+                'created': len(created),
+                'errors': errors,
+                'items': created
+            }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return response.Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VulnerabilityAssetViewSet(viewsets.ModelViewSet):
@@ -360,6 +529,11 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = Comment.objects.all()
+
+        # Filter by vulnerability if query param provided
+        vulnerability_id = self.request.query_params.get('vulnerability')
+        if vulnerability_id:
+            queryset = queryset.filter(vulnerability__pk=vulnerability_id)
 
         # Filter comments by company access
         if user.role != 'ADMIN':
@@ -664,6 +838,19 @@ class ReportTemplateViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), IsAdmin()]
         return [permissions.IsAuthenticated()]
 
+class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
+    queryset = VulnerabilityTemplate.objects.all()
+    serializer_class = VulnerabilityTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'details_md']
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), IsTesterOrAdmin()]
+        return [permissions.IsAuthenticated()]
+
     @decorators.action(detail=True, methods=['get'])
     def download(self, request, pk=None):
         from django.http import FileResponse
@@ -686,6 +873,79 @@ class ReportTemplateViewSet(viewsets.ModelViewSet):
         response = FileResponse(file_handle, content_type=content_type)
         response['Content-Disposition'] = f'attachment; filename="{os.path.basename(template.file.name)}"'
         return response
+
+    @decorators.action(detail=False, methods=['get'], url_path='csv-template')
+    def csv_template(self, request):
+        """Download CSV template for bulk importing vulnerability templates"""
+        from django.http import HttpResponse
+        import csv
+        import io
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['title', 'severity', 'cvss_base_score', 'cvss_vector', 'details_md', 'references'])
+        writer.writerow(['Example SQL Injection', 'HIGH', '8.5', 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H', 
+                        '## Description\nSQL injection vulnerability...', 'https://owasp.org/sqli'])
+        
+        output.seek(0)
+        resp = HttpResponse(output.read(), content_type='text/csv')
+        resp['Content-Disposition'] = 'attachment; filename="vulnerability_templates_import.csv"'
+        return resp
+
+    @decorators.action(detail=False, methods=['post'], url_path='bulk-import')
+    def bulk_import(self, request):
+        """Bulk import vulnerability templates from CSV"""
+        import csv
+        import io
+        
+        file = request.FILES.get('file')
+        if not file:
+            return response.Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not file.name.endswith('.csv'):
+            return response.Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            content = file.read().decode('utf-8')
+            reader = csv.DictReader(io.StringIO(content))
+            
+            created = []
+            errors = []
+            
+            for row_num, row in enumerate(reader, start=2):  # Start at 2 to account for header
+                try:
+                    # Parse references as list (comma-separated if string)
+                    refs = row.get('references', '')
+                    if isinstance(refs, str) and refs:
+                        references = [r.strip() for r in refs.split(',') if r.strip()]
+                    else:
+                        references = []
+                    
+                    # Parse CVSS score
+                    cvss_score = row.get('cvss_base_score', '').strip()
+                    cvss_score = float(cvss_score) if cvss_score else None
+                    
+                    template = VulnerabilityTemplate.objects.create(
+                        title=row['title'].strip(),
+                        severity=row['severity'].strip().upper(),
+                        cvss_base_score=cvss_score,
+                        cvss_vector=row.get('cvss_vector', '').strip(),
+                        details_md=row.get('details_md', '').strip(),
+                        references=references,
+                        created_by=request.user
+                    )
+                    created.append({'id': str(template.id), 'title': template.title})
+                except Exception as e:
+                    errors.append({'row': row_num, 'error': str(e)})
+            
+            return response.Response({
+                'created': len(created),
+                'errors': errors,
+                'items': created
+            }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return response.Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 class GeneratedReportViewSet(viewsets.ModelViewSet):
     queryset = GeneratedReport.objects.all()
