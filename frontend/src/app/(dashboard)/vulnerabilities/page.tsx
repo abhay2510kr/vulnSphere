@@ -66,18 +66,18 @@ export default function VulnerabilitiesPage() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const companiesData = await companiesRes.json();
-            setCompanies(companiesData.results || companiesData);
+            setCompanies(Array.isArray(companiesData.results) ? companiesData.results : Array.isArray(companiesData) ? companiesData : []);
 
             // Fetch projects
             const projectsRes = await fetch('http://localhost:8000/api/v1/projects/', {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const projectsData = await projectsRes.json();
-            setProjects(projectsData.results || projectsData);
+            setProjects(Array.isArray(projectsData.results) ? projectsData.results : Array.isArray(projectsData) ? projectsData : []);
 
             // Fetch all vulnerabilities from all projects
             const allVulns: Vulnerability[] = [];
-            const projectsList = projectsData.results || projectsData;
+            const projectsList = Array.isArray(projectsData.results) ? projectsData.results : Array.isArray(projectsData) ? projectsData : [];
 
             for (const project of projectsList) {
                 try {

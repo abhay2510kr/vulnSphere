@@ -843,8 +843,9 @@ class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
     serializer_class = VulnerabilityTemplateSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardPagination
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['title', 'details_md']
+    filterset_fields = ['severity']
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:

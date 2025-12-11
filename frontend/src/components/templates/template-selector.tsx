@@ -19,6 +19,10 @@ interface VulnerabilityTemplate {
     id: string;
     title: string;
     severity: string;
+    cvss_base_score?: number;
+    cvss_vector?: string;
+    details_md?: string;
+    references?: string[];
 }
 
 interface TemplateSelectorProps {
@@ -64,7 +68,7 @@ export function TemplateSelector({ open, onOpenChange, onSelect }: TemplateSelec
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Select Template</DialogTitle>
                     <DialogDescription>

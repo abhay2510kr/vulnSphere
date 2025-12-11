@@ -52,22 +52,12 @@ export function TemplatesTable() {
             setLoading(true);
             const params = new URLSearchParams({ page: page.toString(), page_size: '12' });
             if (search) params.append('search', search);
-
-            // Note: If backend supports severity filtering, add it. If not, client side filtered?
-            // Existing viewsets usually support search. Let's assume basic filtering might need to be client side if not implemented,
-            // but for consistency with ProjectsPage let's try to filter client side if API doesn't support it, or assume API support.
-            // Given I didn't verify filter backend support, I'll filter client side if needed or just pass param.
-            // Let's rely on client side filtering for severity if the API returns all matching search.
-            // Actually, existing ViewSet uses StandardResultsSetPagination.
+            if (selectedSeverity !== 'all') params.append('severity', selectedSeverity);
 
             const response = await api.get('/vulnerability-templates/', { params });
 
-            let results = response.data.results || response.data;
+            const results = response.data.results || response.data;
             const count = response.data.count || (Array.isArray(response.data) ? response.data.length : 0);
-
-            if (selectedSeverity !== 'all') {
-                results = results.filter((t: VulnerabilityTemplate) => t.severity === selectedSeverity);
-            }
 
             setTemplates(results);
             setTotalCount(count);
