@@ -221,9 +221,12 @@ class AttachmentSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class ActivityLogSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.name', read_only=True)
+    company_name = serializers.CharField(source='company.name', read_only=True)
+
     class Meta:
         model = ActivityLog
-        fields = ['id', 'company', 'user', 'entity_type', 'entity_id', 'action', 'metadata', 'created_at']
+        fields = ['id', 'company', 'company_name', 'user', 'user_name', 'entity_type', 'entity_id', 'action', 'metadata', 'created_at']
 
 class ReportTemplateSerializer(serializers.ModelSerializer):
     class Meta:

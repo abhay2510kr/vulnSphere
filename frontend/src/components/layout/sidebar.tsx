@@ -9,6 +9,7 @@ import { LayoutDashboard, Building2, Shield, FileText, Settings, LogOut, Sun, Mo
 import { useTheme } from 'next-themes';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState } from 'react';
 import { User, fetchCurrentUser, isAdmin } from '@/lib/auth-utils';
 import { VulnSphereLogo } from '@/components/layout/logo';
@@ -42,38 +43,38 @@ export function Sidebar({ className }: SidebarProps) {
             <div className="space-y-4 py-4">
                 <div className="px-3 py-2">
                     <div className="mb-4 px-4">
-                        <VulnSphereLogo className="h-20 w-auto max-w-full object-contain" />
+                        <VulnSphereLogo />
                     </div>
                     <div className="space-y-1">
-                        <Button variant={pathname === '/dashboard' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/dashboard' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                             <Link href="/dashboard">
-                                <LayoutDashboard className="mr-2 h-4 w-4" />
+                                <LayoutDashboard className="mr-3 h-4 w-4" />
                                 Dashboard
                             </Link>
                         </Button>
-                        <Button variant={pathname === '/companies' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/companies' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                             <Link href="/companies">
-                                <Building2 className="mr-2 h-4 w-4" />
+                                <Building2 className="mr-3 h-4 w-4" />
                                 Companies
                             </Link>
                         </Button>
-                        <Button variant={pathname === '/projects' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/projects' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                             <Link href="/projects">
-                                <FolderKanban className="mr-2 h-4 w-4" />
+                                <FolderKanban className="mr-3 h-4 w-4" />
                                 Projects
                             </Link>
                         </Button>
-                        <Button variant={pathname === '/vulnerabilities' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/vulnerabilities' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                             <Link href="/vulnerabilities">
-                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                <ShieldAlert className="mr-3 h-4 w-4" />
                                 Vulnerabilities
                             </Link>
                         </Button>
                         {/* Hide Reports from clients */}
                         {currentUser && currentUser.role !== 'CLIENT' && (
-                            <Button variant={pathname === '/reports' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                            <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/reports' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                                 <Link href="/reports">
-                                    <FileText className="mr-2 h-4 w-4" />
+                                    <FileText className="mr-3 h-4 w-4" />
                                     Reports
                                 </Link>
                             </Button>
@@ -86,23 +87,23 @@ export function Sidebar({ className }: SidebarProps) {
                     <div className="space-y-1">
                         {showAdminLinks && (
                             <>
-                                <Button variant={pathname === '/users' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/users' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                                     <Link href="/users">
-                                        <Users className="mr-2 h-4 w-4" />
+                                        <Users className="mr-3 h-4 w-4" />
                                         Users
                                     </Link>
                                 </Button>
-                                <Button variant={pathname === '/activity-logs' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/activity-logs' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                                     <Link href="/activity-logs">
-                                        <Activity className="mr-2 h-4 w-4" />
+                                        <Activity className="mr-3 h-4 w-4" />
                                         Activity Logs
                                     </Link>
                                 </Button>
                             </>
                         )}
-                        <Button variant={pathname === '/settings' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/settings' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
                             <Link href="/settings">
-                                <Settings className="mr-2 h-4 w-4" />
+                                <Settings className="mr-3 h-4 w-4" />
                                 Settings
                             </Link>
                         </Button>

@@ -1,9 +1,15 @@
+import { Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 export function VulnSphereLogo({ className = "" }: { className?: string }) {
     return (
-        <img
-            src="/logo.svg"
-            alt="VulnSphere"
-            className={className}
-        />
+        <div className={cn("flex items-center gap-2", className)}>
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <Shield className="h-5 w-5 fill-current" />
+            </div>
+            <span className="text-xl font-bold tracking-tight font-[family-name:var(--font-outfit)]">
+                VulnSphere
+            </span>
+        </div>
     );
 }

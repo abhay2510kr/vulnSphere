@@ -28,7 +28,7 @@ export default function ReportsPage() {
     // Pagination state
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
-    const pageSize = 10;
+    const pageSize = 12;
 
     // Redirect clients away from this page
     useEffect(() => {

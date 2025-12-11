@@ -47,28 +47,30 @@ export default function SettingsPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Full Name</Label>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">Full Name</Label>
                             <Input
                                 id="name"
                                 placeholder="Enter your name"
-                                className="max-w-md"
+                                className="col-span-3 max-w-md"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="email" className="text-right">Email</Label>
                             <Input
                                 id="email"
                                 type="email"
                                 placeholder="Enter your email"
-                                className="max-w-md"
+                                className="col-span-3 max-w-md"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
-                        <Button>Save Changes</Button>
+                        <div className="flex justify-end">
+                            <Button>Save Changes</Button>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -83,19 +85,21 @@ export default function SettingsPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="current-password">Current Password</Label>
-                            <Input id="current-password" type="password" className="max-w-md" />
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="current-password" className="text-right">Current Password</Label>
+                            <Input id="current-password" type="password" className="col-span-3 max-w-md" />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="new-password">New Password</Label>
-                            <Input id="new-password" type="password" className="max-w-md" />
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="new-password" className="text-right">New Password</Label>
+                            <Input id="new-password" type="password" className="col-span-3 max-w-md" />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="confirm-password">Confirm Password</Label>
-                            <Input id="confirm-password" type="password" className="max-w-md" />
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="confirm-password" className="text-right">Confirm Password</Label>
+                            <Input id="confirm-password" type="password" className="col-span-3 max-w-md" />
                         </div>
-                        <Button>Update Password</Button>
+                        <div className="flex justify-end">
+                            <Button>Update Password</Button>
+                        </div>
                     </CardContent>
                 </Card>
 

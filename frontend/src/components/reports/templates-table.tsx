@@ -13,6 +13,7 @@ import {
 import { FileText, Download, Trash2, Edit } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import api from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 
 interface TemplatesTableProps {
@@ -80,9 +81,13 @@ export function TemplatesTable({ templates, loading, onDelete, onEdit }: Templat
                             <TableRow key={template.id}>
                                 <TableCell className="font-medium">{template.name}</TableCell>
                                 <TableCell>
-                                    <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                                    <Badge className={
+                                        type === 'HTML'
+                                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-100/80 dark:bg-blue-900 dark:text-blue-300'
+                                            : 'bg-orange-100 text-orange-800 hover:bg-orange-100/80 dark:bg-orange-900 dark:text-orange-300'
+                                    }>
                                         {type}
-                                    </span>
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
                                     {template.description || 'No description'}

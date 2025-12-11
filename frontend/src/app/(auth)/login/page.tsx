@@ -85,7 +85,7 @@ export default function LoginPage() {
         <div className="flex h-screen w-full items-center justify-center bg-muted/40">
             <div className="w-full max-w-sm space-y-6">
                 <div className="flex justify-center">
-                    <VulnSphereLogo className="h-16 w-auto max-w-full object-contain" />
+                    <VulnSphereLogo />
                 </div>
                 <Card className="w-full">
                     <CardHeader>

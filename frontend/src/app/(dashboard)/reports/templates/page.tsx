@@ -13,7 +13,7 @@ import { TablePagination } from '@/components/ui/table-pagination';
 
 export default function TemplatesPage() {
     const [templates, setTemplates] = useState<ReportTemplate[]>([]);
-    const [itemsPerPage] = useState(10);
+    const [itemsPerPage] = useState(12);
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);

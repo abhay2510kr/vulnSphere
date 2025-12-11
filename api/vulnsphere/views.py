@@ -12,6 +12,13 @@ from .serializers import (
 from .report_generator import ReportGenerator
 from .permissions import IsAdmin, IsAdminOrTester, IsTesterOrAdmin, CanRequestRetest, IsCompanyMember, IsClientReadOnly
 
+from rest_framework.pagination import PageNumberPagination
+
+class StandardPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -32,7 +39,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAdmin()]
+            return [IsTesterOrAdmin()]
         return [permissions.IsAuthenticated()]
     
     def get_queryset(self):
@@ -81,12 +88,14 @@ class AssetViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
     queryset = Asset.objects.all()
     serializer_class = AssetSerializer
     permission_classes = [permissions.IsAuthenticated, IsClientReadOnly]
+    pagination_class = StandardPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'identifier', 'type']
 
 class ProjectViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    pagination_class = StandardPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'summary']
     permission_classes = [permissions.IsAuthenticated, IsClientReadOnly]
@@ -111,6 +120,7 @@ class ProjectViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
 class VulnerabilityViewSet(viewsets.ModelViewSet):
     queryset = Vulnerability.objects.all()
     serializer_class = VulnerabilitySerializer
+    pagination_class = StandardPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'code']
     
@@ -349,13 +359,17 @@ class CommentViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        
+        queryset = Comment.objects.all()
+
         # Filter comments by company access
-        if user.role == 'ADMIN':
-            return Comment.objects.all()
+        if user.role != 'ADMIN':
+            queryset = queryset.filter(company__in=user.companies.all())
         
-        # Clients and Testers only see comments from their assigned companies
-        return Comment.objects.filter(company__in=user.companies.all())
+        # Clients cannot see internal comments
+        if user.role == 'CLIENT':
+            queryset = queryset.filter(is_internal=False)
+
+        return queryset
     
     def perform_create(self, serializer):
         # Extract IDs from request data
@@ -506,6 +520,7 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ActivityLog.objects.all()
     serializer_class = ActivityLogSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardPagination
     
     def get_queryset(self):
         user = self.request.user
@@ -637,12 +652,6 @@ class DashboardStatsViewSet(viewsets.ViewSet):
             'vulnerability_trend': trend_data,
         })
 
-from rest_framework.pagination import PageNumberPagination
-
-class StandardPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
 
 class ReportTemplateViewSet(viewsets.ModelViewSet):
     queryset = ReportTemplate.objects.all()

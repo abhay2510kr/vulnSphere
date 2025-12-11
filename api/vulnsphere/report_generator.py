@@ -193,8 +193,23 @@ class ReportGenerator:
     def get_project_context(self, project, inline_images=False):
         """Get comprehensive project context for report generation"""
         from .serializers import VulnerabilitySerializer
+        from collections import Counter
         
         vulnerabilities = project.vulnerabilities.all().order_by('-severity', '-created_at')
+        
+        # Calculate risk counts
+        counts = Counter(v.severity for v in vulnerabilities)
+        risk_counts = {
+            'critical': counts['CRITICAL'],
+            'high': counts['HIGH'],
+            'med': counts['MEDIUM'],
+            'low': counts['LOW'],
+            'info': counts['INFO'],
+            'total': len(vulnerabilities)
+        }
+        
+        assets = project.assets.all()
+        assets_list = [{'name': a.name, 'type': a.get_type_display(), 'url': a.identifier} for a in assets]
         
         context = {
             'project': {
@@ -208,20 +223,27 @@ class ReportGenerator:
                 'end_date': project.end_date.strftime('%B %d, %Y'),
                 'status': project.get_status_display(),
             },
+            'risk_counts': risk_counts,
+            'assets': assets_list,
             'vulnerabilities': []
         }
         
         for vuln in vulnerabilities:
             # Convert markdown to HTML for clean rendering
+            vuln_assets = ", ".join([a.name for a in vuln.assets.all()])
+            
             vuln_data = {
                 'id': str(vuln.id),
                 'title': vuln.title,
-                'severity': vuln.get_severity_display(),
+                'severity': vuln.severity, # Keep raw for logic, display using filter or separate field
+                'severity_display': 'Info' if vuln.get_severity_display() == 'Informational' else vuln.get_severity_display(),
                 'status': vuln.get_status_display(),
+                'status_code': vuln.status,
                 'cvss_base_score': str(vuln.cvss_base_score) if vuln.cvss_base_score else 'N/A',
                 'cvss_vector': vuln.cvss_vector,
                 'description': render_markdown(vuln.details_md, inline_images=inline_images),  # Rendered HTML with code highlighting
                 'created_at': vuln.created_at.strftime('%B %d, %Y'),
+                'assets': [{'name': a.name, 'url': a.identifier} for a in vuln.assets.all()],
                 'retests': []
             }
             

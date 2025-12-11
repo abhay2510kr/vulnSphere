@@ -116,7 +116,13 @@ export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) 
                                 )}
                             </TableCell>
                             <TableCell>
-                                <Badge variant="secondary">{report.format}</Badge>
+                                <Badge className={
+                                    report.format === 'HTML'
+                                        ? 'bg-blue-100 text-blue-800 hover:bg-blue-100/80 dark:bg-blue-900 dark:text-blue-300'
+                                        : 'bg-orange-100 text-orange-800 hover:bg-orange-100/80 dark:bg-orange-900 dark:text-orange-300'
+                                }>
+                                    {report.format}
+                                </Badge>
                             </TableCell>
                             <TableCell>
                                 {report.is_failed ? (

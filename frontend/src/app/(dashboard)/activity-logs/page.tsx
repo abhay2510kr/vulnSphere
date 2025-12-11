@@ -16,6 +16,8 @@ interface ActivityLog {
     entity_id: string;
     action: string;
     metadata: Record<string, any>;
+    user_name?: string; // Added from serializer
+    company_name?: string; // Added from serializer
     created_at: string;
 }
 
@@ -48,7 +50,7 @@ export default function ActivityLogsPage() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
-    const pageSize = 20;
+    const pageSize = 12;
 
     useEffect(() => {
         const fetchLogs = async () => {
@@ -83,6 +85,95 @@ export default function ActivityLogsPage() {
 
     const handleNextPage = () => {
         if (page < totalPages) setPage(page + 1);
+    };
+
+    const getEntityName = (log: ActivityLog) => {
+        if (log.entity_type === 'COMMENT') {
+            if (log.metadata?.vulnerability_title) return `Comment on ${log.metadata.vulnerability_title}`;
+            if (log.metadata?.project_title) return `Comment on ${log.metadata.project_title}`;
+            return 'Comment';
+        }
+        if (log.entity_type === 'RETEST') {
+            if (log.metadata?.vulnerability_title) return `Retest for ${log.metadata.vulnerability_title}`;
+        }
+
+        if (log.metadata?.title) return log.metadata.title;
+        if (log.metadata?.name) return log.metadata.name;
+        if (log.metadata?.username) return log.metadata.username;
+
+        return log.entity_id;
+    };
+
+    const renderPagination = () => {
+        if (totalPages <= 1) return null;
+
+        const pages = [];
+        // Simple logic for < [1] ... [5] >
+        // If pages <= 7 show all
+        // If pages > 7, show 1, 2, ..., current-1, current, current+1, ..., last
+
+        // Using a simpler approach as requested: < [1] ... [5] >
+        // Let's implement full range for small counts, and reduced for large.
+
+        let startPage = Math.max(1, page - 2);
+        let endPage = Math.min(totalPages, page + 2);
+
+        if (startPage > 1) {
+            pages.push(1);
+            if (startPage > 2) pages.push('...');
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) pages.push('...');
+            pages.push(totalPages);
+        }
+
+        return (
+            <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                    Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to <span className="font-medium">{Math.min(page * pageSize, totalCount)}</span> of <span className="font-medium">{totalCount}</span> entries
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handlePreviousPage}
+                        disabled={page === 1 || loading}
+                        className="h-8 w-8"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {pages.map((p, idx) => (
+                        typeof p === 'number' ? (
+                            <Button
+                                key={idx}
+                                variant={page === p ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPage(p)}
+                                className="h-8 w-8"
+                            >
+                                {p}
+                            </Button>
+                        ) : (
+                            <span key={idx} className="text-muted-foreground px-2">...</span>
+                        )
+                    ))}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleNextPage}
+                        disabled={page === totalPages || loading}
+                        className="h-8 w-8"
+                    >
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        );
     };
 
     if (error) {
@@ -126,75 +217,74 @@ export default function ActivityLogsPage() {
             ) : logs.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8 border rounded-lg bg-muted/40">No activity logs found</p>
             ) : (
-                <div className="rounded-md border p-6">
-                    <div className="space-y-4">
-                        {logs.map((log) => (
-                            <div key={log.id} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
-                                <div
-                                    className={`mt-1 h-8 w-8 rounded-full flex items-center justify-center ${ENTITY_TYPE_COLORS[log.entity_type] || 'bg-gray-500'
-                                        }`}
-                                >
-                                    <Activity className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <Badge className={ACTION_COLORS[log.action] || 'bg-gray-100'}>
-                                            {log.action.replace(/_/g, ' ')}
-                                        </Badge>
-                                        <Badge variant="outline">
-                                            {log.entity_type}
-                                        </Badge>
+                <>
+                    <div className="rounded-md border p-6 bg-card">
+                        <div className="space-y-4">
+                            {logs.map((log) => (
+                                <div key={log.id} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
+                                    <div
+                                        className={`mt-1 h-8 w-8 rounded-full flex items-center justify-center ${ENTITY_TYPE_COLORS[log.entity_type] || 'bg-gray-500'
+                                            }`}
+                                    >
+                                        <Activity className="h-4 w-4 text-white" />
                                     </div>
-                                    <div className="mt-1 text-sm text-muted-foreground">
-                                        <span className="font-medium">Entity ID:</span> {log.entity_id}
-                                    </div>
-                                    {log.metadata && Object.keys(log.metadata).length > 0 && (
-                                        <div className="mt-1 text-sm">
-                                            {Object.entries(log.metadata).map(([key, value]) => (
-                                                <span key={key} className="mr-3">
-                                                    <span className="text-muted-foreground">{key}:</span>{' '}
-                                                    <span className="font-medium">{String(value)}</span>
-                                                </span>
-                                            ))}
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <Badge className={ACTION_COLORS[log.action] || 'bg-gray-100'}>
+                                                {log.action.replace(/_/g, ' ')}
+                                            </Badge>
+                                            <Badge variant="outline">
+                                                {log.entity_type}
+                                            </Badge>
+                                            <span className="text-sm text-muted-foreground ml-auto whitespace-nowrap md:hidden">
+                                                {format(new Date(log.created_at), 'MMM d, HH:mm')}
+                                            </span>
                                         </div>
-                                    )}
-                                </div>
-                                <div className="text-sm text-muted-foreground whitespace-nowrap">
-                                    {format(new Date(log.created_at), 'MMM d, yyyy HH:mm')}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                        <div className="mt-2 text-sm">
+                                            <span className="font-semibold">{log.user_name || 'System'}:</span>{' '}
+                                            <span className="text-muted-foreground">
+                                                {log.action.toLowerCase().replace(/_/g, ' ')}{' '}
+                                            </span>
+                                            <span className="font-medium text-foreground">
+                                                {getEntityName(log)}
+                                            </span>
+                                        </div>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                            <div className="text-sm text-muted-foreground">
-                                Page {page} of {totalPages} ({totalCount} total logs)
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handlePreviousPage}
-                                    disabled={page === 1 || loading}
-                                >
-                                    <ChevronLeft className="h-4 w-4 mr-1" />
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleNextPage}
-                                    disabled={page === totalPages || loading}
-                                >
-                                    Next
-                                    <ChevronRight className="h-4 w-4 ml-1" />
-                                </Button>
-                            </div>
+                                        {/* Metadata rendering - filtering out IDs and the main title/name we already displayed */}
+                                        {log.metadata && Object.keys(log.metadata).length > 0 && (
+                                            <div className="mt-1 text-sm flex flex-wrap gap-x-4 gap-y-1">
+                                                {Object.entries(log.metadata)
+                                                    .filter(([key]) =>
+                                                        !key.endsWith('_id') &&
+                                                        !key.endsWith('_pk') &&
+                                                        !key.endsWith('uuid') &&
+                                                        key !== 'title' &&
+                                                        key !== 'name' &&
+                                                        key !== 'username' &&
+                                                        key !== 'vulnerability_title' &&
+                                                        key !== 'project_title' &&
+                                                        key !== 'author_name' && // Redundant with log.user_name
+                                                        key !== 'requested_by' && // Hide UUID
+                                                        key !== 'performed_by' && // Hide UUID
+                                                        key !== 'retest_id'
+                                                    )
+                                                    .map(([key, value]) => (
+                                                        <span key={key} className="text-muted-foreground">
+                                                            {key.replace(/_/g, ' ')}: <span className="font-medium text-foreground">{String(value)}</span>
+                                                        </span>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="hidden md:block text-sm text-muted-foreground whitespace-nowrap">
+                                        {format(new Date(log.created_at), 'MMM d, yyyy HH:mm')}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    )}
-                </div>
+                    </div>
+                    {renderPagination()}
+                </>
             )}
         </div>
     );

@@ -185,8 +185,11 @@ def log_comment_activity(sender, instance, created, **kwargs):
         action='CREATED',
         metadata={
             'author_id': str(instance.author.pk) if instance.author else None,
+            'author_name': instance.author.name if instance.author else None,
             'project_id': str(instance.project.pk) if instance.project else None,
-            'vulnerability_id': str(instance.vulnerability.pk) if instance.vulnerability else None
+            'project_title': instance.project.title if instance.project else None,
+            'vulnerability_id': str(instance.vulnerability.pk) if instance.vulnerability else None,
+            'vulnerability_title': instance.vulnerability.title if instance.vulnerability else None
         }
     )
 
@@ -201,7 +204,8 @@ def log_comment_delete(sender, instance, **kwargs):
         entity_id=instance.pk,
         action='DELETED',
         metadata={
-            'author_id': str(instance.author.pk) if instance.author else None
+            'author_id': str(instance.author.pk) if instance.author else None,
+            'author_name': instance.author.name if instance.author else None
         }
     )
 
@@ -244,7 +248,9 @@ def log_retest_activity(sender, instance, created, **kwargs):
             'request_type': instance.request_type,
             'status': instance.status if instance.status else None,
             'requested_by': str(instance.requested_by.pk) if instance.requested_by else None,
-            'performed_by': str(instance.performed_by.pk) if instance.performed_by else None
+            'requested_by_name': instance.requested_by.name if instance.requested_by else None,
+            'performed_by': str(instance.performed_by.pk) if instance.performed_by else None,
+            'performed_by_name': instance.performed_by.name if instance.performed_by else None
         }
     )
 

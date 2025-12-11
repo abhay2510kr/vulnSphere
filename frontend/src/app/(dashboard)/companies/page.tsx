@@ -118,7 +118,7 @@ export default function CompaniesPage() {
                         Manage and view all companies in the system.
                     </p>
                 </div>
-                {isAdmin && (
+                {(isAdmin || isTester) && (
                     <Button onClick={() => setCreateDialogOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Company
@@ -163,7 +163,7 @@ export default function CompaniesPage() {
                     <p className="text-muted-foreground mb-4">
                         {searchQuery ? 'No companies found matching your search.' : 'Create your first company to get started'}
                     </p>
-                    {!searchQuery && isAdmin && (
+                    {!searchQuery && (isAdmin || isTester) && (
                         <Button onClick={() => setCreateDialogOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add Company
@@ -222,7 +222,7 @@ export default function CompaniesPage() {
                                                             <Eye className="h-4 w-4" />
                                                         </Link>
                                                     </Button>
-                                                    {isAdmin && (
+                                                    {(isAdmin || isTester) && (
                                                         <>
                                                             <Button variant="ghost" size="sm" onClick={(e) => handleEditClick(e, company)}>
                                                                 <Pencil className="h-4 w-4" />
@@ -249,7 +249,7 @@ export default function CompaniesPage() {
                 </>
             )}
 
-            {isAdmin && (
+            {(isAdmin || isTester) && (
                 <>
                     <CompanyCreateDialog
                         open={createDialogOpen}

@@ -68,7 +68,7 @@ export default function ProjectsPage() {
             setCompanies(companiesData.results || companiesData);
 
             // Build query params
-            const params = new URLSearchParams({ page: page.toString() });
+            const params = new URLSearchParams({ page: page.toString(), page_size: '12' });
             if (search) params.append('search', search);
 
             // Fetch projects
@@ -244,7 +244,7 @@ export default function ProjectsPage() {
             <TablePagination
                 currentPage={page}
                 totalItems={totalCount}
-                itemsPerPage={20}
+                itemsPerPage={12}
                 onPageChange={setPage}
             />
 

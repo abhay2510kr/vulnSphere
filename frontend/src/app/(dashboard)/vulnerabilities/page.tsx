@@ -5,11 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+
 import { Search, Eye } from 'lucide-react';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { SeverityBadge } from '@/components/vulnerabilities/severity-badge';
+import { StatusBadge } from '@/components/vulnerabilities/status-badge';
 
 interface Company {
     id: string;
@@ -33,6 +36,7 @@ interface Vulnerability {
 }
 
 export default function VulnerabilitiesPage() {
+    const router = useRouter();
     const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -126,8 +130,8 @@ export default function VulnerabilitiesPage() {
         }
 
         // Pagination
-        const startIndex = (page - 1) * 20;
-        return filtered.slice(startIndex, startIndex + 20);
+        const startIndex = (page - 1) * 12;
+        return filtered.slice(startIndex, startIndex + 12);
     };
 
     const getCompanyName = (projectId: string) => {
@@ -141,28 +145,7 @@ export default function VulnerabilitiesPage() {
         return projects.find(p => p.id === projectId)?.title || `Project ${projectId}`;
     };
 
-    const getSeverityBadge = (severity: string) => {
-        const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
-            CRITICAL: { variant: 'destructive', className: 'bg-red-600 hover:bg-red-700' },
-            HIGH: { variant: 'destructive', className: 'bg-orange-600 hover:bg-orange-700' },
-            MEDIUM: { variant: 'default', className: 'bg-yellow-600 hover:bg-yellow-700' },
-            LOW: { variant: 'secondary', className: 'bg-blue-600 hover:bg-blue-700' },
-            INFO: { variant: 'outline', className: '' },
-        };
-        const config = variants[severity] || variants.INFO;
-        return <Badge variant={config.variant} className={config.className}>{severity}</Badge>;
-    };
 
-    const getStatusBadge = (status: string) => {
-        const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-            OPEN: 'destructive',
-            IN_PROGRESS: 'secondary',
-            RESOLVED: 'default',
-            ACCEPTED_RISK: 'outline',
-            FALSE_POSITIVE: 'outline',
-        };
-        return <Badge variant={variants[status] || 'default'}>{status.replace('_', ' ')}</Badge>;
-    };
 
     const filteredVulns = getFilteredVulnerabilities();
 
@@ -207,11 +190,11 @@ export default function VulnerabilitiesPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Severities</SelectItem>
-                            <SelectItem value="CRITICAL">Critical</SelectItem>
-                            <SelectItem value="HIGH">High</SelectItem>
-                            <SelectItem value="MEDIUM">Medium</SelectItem>
-                            <SelectItem value="LOW">Low</SelectItem>
-                            <SelectItem value="INFO">Informational</SelectItem>
+                            <SelectItem value="CRITICAL"><SeverityBadge severity="CRITICAL" grow /></SelectItem>
+                            <SelectItem value="HIGH"><SeverityBadge severity="HIGH" grow /></SelectItem>
+                            <SelectItem value="MEDIUM"><SeverityBadge severity="MEDIUM" grow /></SelectItem>
+                            <SelectItem value="LOW"><SeverityBadge severity="LOW" grow /></SelectItem>
+                            <SelectItem value="INFO"><SeverityBadge severity="INFO" grow /></SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
@@ -220,11 +203,11 @@ export default function VulnerabilitiesPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="OPEN">Open</SelectItem>
-                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                            <SelectItem value="RESOLVED">Resolved</SelectItem>
-                            <SelectItem value="ACCEPTED_RISK">Accepted Risk</SelectItem>
-                            <SelectItem value="FALSE_POSITIVE">False Positive</SelectItem>
+                            <SelectItem value="OPEN"><StatusBadge status="OPEN" grow /></SelectItem>
+                            <SelectItem value="IN_PROGRESS"><StatusBadge status="IN_PROGRESS" grow /></SelectItem>
+                            <SelectItem value="RESOLVED"><StatusBadge status="RESOLVED" grow /></SelectItem>
+                            <SelectItem value="ACCEPTED_RISK"><StatusBadge status="ACCEPTED_RISK" grow /></SelectItem>
+                            <SelectItem value="FALSE_POSITIVE"><StatusBadge status="FALSE_POSITIVE" grow /></SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -257,18 +240,28 @@ export default function VulnerabilitiesPage() {
                             </TableRow>
                         ) : (
                             filteredVulns.map((vuln) => (
-                                <TableRow key={vuln.id}>
+                                <TableRow
+                                    key={vuln.id}
+                                    className="cursor-pointer hover:bg-muted/50"
+                                    onClick={() => router.push(`/project/${vuln.project}/vulnerabilities/${vuln.id}`)}
+                                >
                                     <TableCell className="font-medium">{vuln.title}</TableCell>
                                     <TableCell>{getCompanyName(vuln.project)}</TableCell>
                                     <TableCell>{getProjectTitle(vuln.project)}</TableCell>
-                                    <TableCell>{getSeverityBadge(vuln.severity)}</TableCell>
-                                    <TableCell>{getStatusBadge(vuln.status)}</TableCell>
+                                    <TableCell>
+                                        <SeverityBadge severity={vuln.severity} grow />
+                                    </TableCell>
+                                    <TableCell>
+                                        <StatusBadge status={vuln.status} grow />
+                                    </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" asChild>
-                                            <Link href={`/project/${vuln.project}/vulnerabilities/${vuln.id}`}>
-                                                <Eye className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
+                                        <div onClick={(e) => e.stopPropagation()}>
+                                            <Button variant="ghost" size="icon" asChild>
+                                                <Link href={`/project/${vuln.project}/vulnerabilities/${vuln.id}`}>
+                                                    <Eye className="h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -280,7 +273,7 @@ export default function VulnerabilitiesPage() {
             <TablePagination
                 currentPage={page}
                 totalItems={totalCount}
-                itemsPerPage={20}
+                itemsPerPage={12}
                 onPageChange={setPage}
             />
         </div>

@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Assessment Report</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            /* Colors */
+            --primary: #4F46E5;
+            --primary-light: color-mix(in srgb, var(--primary) 65%, white);
+            --primary-dark: color-mix(in srgb, var(--primary) 65%, black);
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --severity-critical: #6c00af;
+            --severity-high: #af0000;
+            --severity-medium: #d97706;
+            --severity-med: #d97706;
+            --severity-low: #059669;
+            --severity-info: #0b4fe2;
+
+            /* Status Colors */
+            --status-open: #B91C1C;
+            --status-in-progress: #1D4ED8;
+            --status-resolved: #15803D;
+            --status-accepted-risk: #B45309;
+            --status-false-positive: #1E3A8A;
+            --status-retest-pending: #7E22CE;
+            --status-retest-failed: #991B1B;
+
+            /* Typography Scale */
+            --font-xs: 12px;
+            --font-sm: 14px;
+            --font-base: 16px;
+            --font-lg: 18px;
+            --font-xl: 24px;
+            --font-2xl: 28px;
+            --font-3xl: 36px;
+            --font-4xl: 42px;
+            --font-5xl: 48px;
+        }
+
+        finding * {
+            text-overflow: ellipsis !important;
+            word-wrap: break-word !important;
+            word-break: break-word !important;
+        }
+
+        /* Base Styles */
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-800);
+            background-color: var(--gray-100);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Typography */
+        h1,
+        h2,
+        h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        h1 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 12px;
+            font-size: var(--font-2xl);
+            font-weight: 700;
+        }
+
+        h2 {
+            color: var(--gray-800);
+            font-size: var(--font-lg);
+        }
+
+        h3 {
+            color: var(--gray-700);
+            font-size: var(--font-base);
+        }
+
+        p {
+            margin: 0 0 1em;
+            text-align: justify;
+        }
+
+        /* Code Blocks */
+        code,
+        pre {
+            overflow-wrap: break-word !important;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            padding: 1em;
+            margin: 0.5em 0;
+        }
+
+        code {
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+            font-size: inherit;
+            white-space: pre-wrap;
+            border-radius: 0;
+        }
+
+        .pages {
+            width: 210mm;
+            padding: 20mm;
+            margin: 20px 0;
+            box-sizing: border-box;
+            background-color: white;
+        }
+
+        /* Layout Components */
+        .cover-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 40mm 20mm;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .cover-page::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='gradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='white' stop-opacity='0.1'/%3E%3Cstop offset='100%25' stop-color='white' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='url(%23gradient)'%3E%3Cpath d='M0 0h60v60H0z'/%3E%3Crect x='0' y='0' width='60' height='1'/%3E%3Crect x='0' y='0' width='1' height='60'/%3E%3Crect x='59' y='0' width='1' height='60'/%3E%3Crect x='0' y='59' width='60' height='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") !important;
+            opacity: 0.2;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Cover Page Elements */
+        .logo {
+            width: 240px;
+            filter: brightness(0) invert(1);
+        }
+
+        .report-title {
+            font-size: var(--font-5xl);
+            color: var(--gray-100);
+            font-weight: 700;
+            margin: 80px 0 20px;
+            line-height: 1.2;
+        }
+
+        .report-subtitle {
+            font-size: var(--font-xl);
+            margin: 10px 0;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .report-meta {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 24px 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .report-date {
+            font-size: var(--font-base);
+            margin-bottom: 12px;
+            opacity: 0.95;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .report-date:last-child {
+            margin-bottom: 0;
+        }
+
+        .report-date b {
+            font-weight: 600;
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
+
+        .end-of-report-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 210mm;
+            height: 253mm;
+            padding: 20mm;
+            margin: 0;
+            box-sizing: border-box;
+            page-break-before: always;
+            page-break-after: avoid;
+            background-color: white;
+        }
+
+        .end-of-report-container {
+            height: 100%;
+            background: var(--gray-50);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        h1 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 12px;
+            margin-top: 0;
+            font-size: var(--font-2xl);
+            font-weight: 700;
+        }
+
+        h2 {
+            color: var(--gray-800);
+            font-size: var(--font-lg);
+            font-weight: 600;
+        }
+
+        h3 {
+            color: var(--gray-700);
+            font-size: var(--font-base);
+            font-weight: 600;
+            margin: 0px;
+        }
+
+        p {
+            margin: 0 0 1em;
+        }
+
+        /* Risk Summary and Container */
+        .risk-summary,
+        .risk-boxes {
+            margin: 30px 0;
+        }
+
+        /* Risk Bar Components */
+        .risk-bar-container,
+        .risk-bar-item,
+        .risk-bar-wrapper {
+            display: flex;
+            gap: 12px;
+        }
+
+        .risk-bar-container {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .risk-bar-wrapper {
+            flex-grow: 1;
+            align-items: center;
+            background: var(--gray-50);
+            border-radius: 4px;
+            padding: 8px;
+        }
+
+        .risk-bar {
+            height: 24px;
+            border-radius: 4px;
+            min-width: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Risk Labels and Counts */
+        .risk-bar-label,
+        .risk-bar-count,
+        .risk-label {
+            font-size: var(--font-sm);
+            font-weight: 500;
+        }
+
+        .risk-bar-label {
+            width: 80px;
+        }
+
+        .risk-bar-count {
+            font-weight: 600;
+            min-width: 24px;
+            text-align: right;
+        }
+
+        /* Risk Box Layout */
+        .risk-boxes {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .risk-box {
+            flex: 1;
+            padding: 20px;
+            border-radius: 0 12px 0 0;
+            text-align: center;
+            min-width: 0;
+            color: white;
+            /*box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);*/
+        }
+
+        /* Risk Box Components */
+        .risk-box-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        .risk-box-count {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        /* Risk Colors */
+        .risk-box.critical {
+            background: linear-gradient(135deg, var(--severity-critical), color-mix(in srgb, var(--severity-critical) 70%, #ffffff));
+        }
+
+        .risk-box.high {
+            background: linear-gradient(135deg, var(--severity-high), color-mix(in srgb, var(--severity-high) 70%, #ffffff));
+        }
+
+        .risk-box.medium {
+            background: linear-gradient(135deg, var(--severity-medium), color-mix(in srgb, var(--severity-medium) 70%, #ffffff));
+        }
+
+        .risk-box.low {
+            background: linear-gradient(135deg, var(--severity-low), color-mix(in srgb, var(--severity-low) 70%, #ffffff));
+        }
+
+        .risk-box.info {
+            background: linear-gradient(135deg, var(--severity-info), color-mix(in srgb, var(--severity-info) 70%, #ffffff));
+        }
+
+        /* Risk Count and Label */
+        .risk-count {
+            font-size: var(--font-4xl);
+            font-weight: 700;
+            margin: 10px 0;
+            line-height: 1;
+        }
+
+        .risk-label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            font-size: var(--font-sm);
+        }
+
+        table a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-800);
+            text-transform: uppercase;
+            font-size: var(--font-xs);
+            letter-spacing: 0.8px;
+        }
+
+        /* Findings */
+        h1:not(.report-title) {
+            margin-bottom: 10mm;
+        }
+
+        .finding {
+            border: 1px solid var(--gray-200);
+            border-radius: 5px;
+            margin-bottom: 10mm;
+            display: block;
+            position: relative;
+            font-size: var(--font-xs);
+        }
+
+        .finding img {
+            width: 100%;
+            border: solid var(--gray-100);
+            border-radius: 3px;
+            page-break-inside: avoid;
+        }
+
+        .finding-header {
+            background: var(--gray-50);
+            padding: 20px;
+            border-bottom: 1px solid var(--gray-200);
+            border-radius: 5px 5px 0 0;
+        }
+
+        .finding-title {
+            margin: 0;
+            color: var(--gray-900);
+        }
+
+        .vuln-id {
+            color: var(--primary);
+        }
+
+        .finding-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            color: var(--gray-600);
+        }
+
+        .finding-description,
+        .finding-references {
+            padding: 20px;
+        }
+
+        .finding-resolution {
+            background: var(--gray-50);
+            margin: 0 20px 20px;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .finding-description,
+        .finding-resolution {
+            font-size: 1.2em
+        }
+
+        /* Image Captions */
+        figure.image-with-caption {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 1.5em 0;
+        }
+
+        figure.image-with-caption img {
+            max-width: 100%;
+            margin-bottom: 0.5em;
+        }
+
+        figure.image-with-caption figcaption {
+            text-align: center;
+            font-size: var(--font-sm);
+            color: var(--gray-600);
+            font-style: italic;
+            margin-top: 8px;
+            max-width: 90%;
+        }
+
+        /* References */
+        .references {
+            list-style: decimal;
+            padding: 0;
+            line-height: 1.2;
+            margin: 10px 0 0 22px;
+        }
+
+        .references li {
+            margin-bottom: 8px;
+        }
+
+        .references a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Table of Contents */
+        .toc-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            text-decoration: none;
+            color: var(--gray-700);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .toc-line {
+            flex-grow: 1;
+            margin: 0 12px;
+            border-bottom: 1px dotted var(--gray-300);
+        }
+
+        .toc-page {
+            color: var(--gray-500);
+            font-size: var(--font-sm);
+            font-weight: 500;
+        }
+
+        /* Utilities */
+        .content-justify {
+            text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
+            -ms-hyphens: auto;
+        }
+
+        .badge-text {
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 2px 0;
+            display: inline-block;
+        }
+
+        hr {
+            border: none;
+            margin: 0;
+            padding: 0;
+            visibility: hidden;
+            page-break-before: always;
+        }
+
+        /* Print Styles */
+        @media print {
+            html {
+                counter-reset: page -1;
+            }
+
+            body {
+                background-color: white !important;
+            }
+
+            .pages {
+                padding: 0 20mm;
+                margin: 0 20px;
+            }
+
+            .end-of-report-page {
+                padding: 0 20mm;
+            }
+
+            @page :first {
+                padding: 0 !important;
+            }
+
+            @page {
+                size: A4;
+                padding: 20mm 0;
+
+                @top-left {
+                    content: "VulnSphere";
+                    font-size: var(--font-sm);
+                    color: var(--primary-dark);
+                    font-weight: 700;
+                    margin-left: 20mm;
+                    margin-bottom: -20mm;
+                    position: absolute;
+                    font-family: 'Inter';
+                    text-transform: uppercase;
+                }
+
+                @top-right {
+                    content: "{{project.company}}";
+                    font-size: var(--font-sm);
+                    color: var(--primary-dark);
+                    font-weight: 700;
+                    margin-right: 20mm;
+                    margin-bottom: -20mm;
+                    position: absolute;
+                    font-family: 'Inter';
+                    text-transform: uppercase;
+                }
+
+                @bottom-center {
+                    content: counter(page);
+                    font-size: var(--font-sm);
+                    color: var(--primary-dark);
+                    font-weight: 700;
+                    margin-top: -20mm;
+                    position: absolute;
+                    font-family: 'Inter'
+                }
+
+                @bottom-right {
+                    content: "RESTRICTED";
+                    font-size: var(--font-sm);
+                    color: #c0392b;
+                    font-weight: 700;
+                    margin-right: 20mm;
+                    margin-top: -20mm;
+                    position: absolute;
+                    font-family: 'Inter';
+                    text-transform: uppercase;
+                }
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Cover Page Template -->
+    <div class="cover-page">
+        <div>
+            <!-- Using project company as placeholder for logo alt if logo url is missing or valid -->
+            <img src="https://ui-avatars.com/api/?name=V+S&background=random&size=256" alt="VulnSphere" class="logo"
+                style="width: 100px; border-radius: 12px;">
+            <h1 class="report-title">{{project.company}}</h1>
+            <div class="report-subtitle">{{project.title}}</div>
+        </div>
+        <div class="report-meta">
+            <div class="report-date">Version <b>1.0</b></div>
+            <div class="report-date">Report Date <b>{{today}}</b></div>
+        </div>
+    </div>
+
+    <div class="pages">
+        <!-- Table of Contents Template -->
+        <div>
+            <h1>Table of Contents</h1>
+            <div class="toc">
+                <a href="#executive-summary" class="toc-item">
+                    <span>1. Executive Summary</span>
+                    <span class="toc-line"></span>
+                    <span class="toc-page">2</span>
+                </a>
+                <a href="#assets-overview" class="toc-item">
+                    <span>2. Scope Overview</span>
+                    <span class="toc-line"></span>
+                    <span class="toc-page">3</span>
+                </a>
+                <a href="#vulnerabilities-summary" class="toc-item">
+                    <span>3. Vulnerabilities Summary</span>
+                    <span class="toc-line"></span>
+                    <span class="toc-page">4</span>
+                </a>
+                <a href="#detailed-findings" class="toc-item">
+                    <span>4. Detailed Findings</span>
+                    <span class="toc-line"></span>
+                    <span class="toc-page">5</span>
+                </a>
+            </div>
+        </div>
+        <hr>
+
+        <!-- Executive Summary Template -->
+        <div>
+            <h1 id="executive-summary">1. Executive Summary</h1>
+            <div class="exec-summary-content content-justify">
+                {{project.company}} approached VulnSphere to deliver a {{project.title}}. VulnSphere team conducted the
+                security assessment from {{project.start_date}} to {{project.end_date}}.
+                <br>
+                The primary purpose of this assessment was to identify security vulnerabilities and weaknesses and
+                assess the associated impact on the business on the identified scope.
+                <br>
+                {% if risk_counts.total > 5 %}
+                The security assessment revealed significant concerns in the tested environment. A total of
+                {{risk_counts.total}} vulnerabilities were identified{% if risk_counts.critical > 0 %}, including
+                {{risk_counts.critical}} critical-severity issues that require immediate attention{% endif %}{% if
+                risk_counts.high > 0 %} and {{risk_counts.high}} high-severity vulnerabilities that pose substantial
+                risk{% endif %}. The findings indicate that the current security posture requires comprehensive
+                improvements to better protect the system and its resources.
+                {% else %}
+                The security assessment identified a relatively moderate number of {{risk_counts.total}} vulnerabilities
+                in the tested environment{% if risk_counts.critical > 0 or risk_counts.high > 0 %}. However, the
+                presence of {% if risk_counts.critical > 0 %}{{risk_counts.critical}} critical{% endif %}{% if
+                risk_counts.critical > 0 and risk_counts.high > 0 %} and {% endif %}{% if risk_counts.high > 0
+                %}{{risk_counts.high}} high{% endif %} severity findings indicates that immediate attention is required
+                to address significant security risks{% endif %}. The overall security posture shows room for
+                improvement through targeted remediation efforts.
+                {% endif %}
+                <br>
+                The summary below provides a high-level view of the security findings that were identified during this
+                assessment.
+            </div>
+            <div class="risk-summary">
+                <style>
+
+                </style>
+                <div class="risk-boxes">
+                    {% set risk_types = [
+                    {'severity': 'critical', 'label': 'Critical', 'count': risk_counts.critical},
+                    {'severity': 'high', 'label': 'High', 'count': risk_counts.high},
+                    {'severity': 'medium', 'label': 'Medium', 'count': risk_counts.med},
+                    {'severity': 'low', 'label': 'Low', 'count': risk_counts.low},
+                    {'severity': 'info', 'label': 'Info', 'count': risk_counts.info}
+                    ] %}
+                    {% for risk in risk_types %}
+                    <div class="risk-box {{risk.severity}}">
+                        <div class="risk-box-label">{{risk.label}}</div>
+                        <div class="risk-box-count">{{risk.count}}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <p class="content-justify">
+
+                {% if risk_counts.critical > 0 %}
+                Of particular concern are the critical vulnerabilities discovered, including {% for vulnerability in
+                vulnerabilities if vulnerability.severity == 'CRITICAL' %}{{ vulnerability.title }}{% if not loop.last
+                %}, {% endif %}{% endfor %}. These issues require immediate remediation to prevent potential system
+                compromise.
+                {% endif %}
+
+                {% if risk_counts.high > 0 %}
+                High-severity findings such as {% for vulnerability in vulnerabilities if vulnerability.severity ==
+                'HIGH' %}{{ vulnerability.title }}{% if not loop.last %}, {% endif %}{% endfor %} also pose significant
+                risks that should be addressed promptly.
+                {% endif %}
+
+                {% if risk_counts.med > 0 %}
+                Several medium-risk vulnerabilities were identified, including {% for vulnerability in vulnerabilities
+                if vulnerability.severity == 'MEDIUM' %}{{ vulnerability.title }}{% if not loop.last %}, {% endif %}{%
+                endfor %}, which could potentially be exploited to compromise system security.
+                {% endif %}
+
+                {% if risk_counts.low > 0 %}
+                The assessment also revealed low-severity issues that, while not critical, should be addressed as part
+                of ongoing security maintenance.
+                {% endif %}
+
+                Based on these findings, we recommend implementing a prioritized remediation plan focusing on the {% if
+                risk_counts.critical > 0 %}critical{% elif risk_counts.high > 0 %}high{% elif risk_counts.med > 0
+                %}medium{% else %}identified{% endif %} severity issues first to strengthen the overall security
+                posture.
+                <br>
+                {{project.summary | safe}}
+            </p>
+        </div>
+        <hr>
+
+        <!-- Scope Overview Template -->
+        <div>
+            <h1 id="assets-overview">2. Scope Overview</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Asset</th>
+                        <th>Type</th>
+                        <th>URL/Identifier</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in assets %}
+                    <tr>
+                        <td>A{{ "%02d" | format(loop.index) }}</td>
+                        <td>{{asset.name}}</td>
+                        <td>{{asset.type}}</td>
+                        <td>{{asset.url}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <hr>
+
+        <!-- Vulnerabilities Summary Template -->
+        <div>
+            <h1 id="vulnerabilities-summary">3. Vulnerabilities Summary</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Vulnerability</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vuln in vulnerabilities %}
+                    <tr class="clickable-row">
+                        <td>{{ "%03d" | format(loop.index) }}</td>
+                        <td><a href="#vuln-{{ " %03d" | format(loop.index) }}">{{vuln.title}}</a></td>
+                        <td><b class="badge-text"
+                                style="color: var(--severity-{{vuln.severity | lower}});">{{vuln.severity_display}}</b>
+                        </td>
+                        <td><b class="badge-text"
+                                style="color: var(--status-{{vuln.status_code | lower | replace('_', '-')}});">{{vuln.status}}</b>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <hr>
+
+        <!-- Detailed Findings Template -->
+        <div class="findings">
+            {% for vuln in vulnerabilities %}
+            {% if loop.first %}
+            <h1 id="detailed-findings">4. Detailed Findings</h1>
+            {% endif %}
+            <div class="finding" id="vuln-{{ " %03d" | format(loop.index) }}">
+                <div class="finding-header">
+                    <h2 class="finding-title">[<span class="vuln-id"
+                            style="color: var(--severity-{{vuln.severity | lower}})">{{ "%03d" | format(loop.index)
+                            }}</span>] {{vuln.title}}</h2>
+                    <div class="finding-meta">
+                        <span>Severity: <b class="badge-text"
+                                style="color: var(--severity-{{vuln.severity | lower}})">{{vuln.severity_display}}</b></span>
+                        <span>Status: <b class="badge-text"
+                                style="color: var(--status-{{vuln.status_code | lower | replace('_', '-')}})">{{vuln.status}}</b></span>
+                        <span>Cvss: <b>{{vuln.cvss_base_score}}</b></span>
+                    </div>
+                </div>
+                <div class="finding-description">
+                    {% if vuln.assets %}
+                    <div style="margin-bottom: 20px;">
+                        <h3>Affected Assets</h3>
+                        <ul style="margin: 5px 0 0 20px; padding: 0;">
+                            {% for asset in vuln.assets %}
+                            <li><b>{{asset.name}}</b> ({{asset.url}})</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    <h3>Description & Details</h3>
+                    <div class="content-justify">{{vuln.description | safe}}</div>
+                </div>
+
+                {% if vuln.retests %}
+                <div class="finding-resolution">
+                    <h3>Retest History</h3>
+                    {% for retest in vuln.retests %}
+                    <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px dashed var(--gray-300);">
+                        <p><strong>{{retest.request_type}}</strong> - {{retest.retest_date}} <span
+                                style="float:right;">Status: <b>{{retest.status}}</b></span></p>
+                        <p style="font-size: var(--font-xs); color: var(--gray-500);">Performed by:
+                            {{retest.performed_by}}</p>
+                        <div class="content-justify">{{retest.notes | safe}}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if vuln.references %}
+                <div class="finding-references">
+                    <h3>References</h3>
+                    <ol class="references">
+                        {% for ref in vuln.references %}
+                        <li><a href="{{ref}}" target="_blank" rel="noopener noreferrer">{{ref}}</a></li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                {% endif %}
+            </div>
+            {% if not loop.last %}
+            <hr>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Final Page Template -->
+    <div class="end-of-report-page">
+        <div class="end-of-report-container">
+            <h1>End of Report</h1>
+            <div style="margin-top: 40px; padding-top: 40px; border-top: 1px solid var(--gray-200);">
+                <p style="color: var(--gray-500); font-size: 14px;">© 2025 All Rights Reserved</p>
+                <p style="color: var(--gray-400); font-size: 12px;">This report is confidential and intended solely for
+                    the use of {{project.company}}.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>document.designMode = 'on';</script>
+</body>
+
+</html>

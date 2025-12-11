@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, RefreshCw, CheckCircle2, XCircle, AlertCircle, Clock, Save, X, Pencil, History } from 'lucide-react';
+import { Plus, RefreshCw, CheckCircle2, XCircle, AlertCircle, Clock, Save, X, Pencil, History, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { MDXEditorComponent } from '@/components/mdx-editor';
 import ReactMarkdown from 'react-markdown';
@@ -105,6 +105,17 @@ export function RetestCard({ companyId, projectId, vulnerabilityId }: RetestCard
         setNotes('');
         setRequestType('RETEST');
         setStatus('PASSED');
+    };
+
+    const handleDelete = async (retest: Retest) => {
+        if (!confirm('Are you sure you want to delete this retest entry?')) return;
+
+        try {
+            await api.delete(`/companies/${companyId}/projects/${projectId}/vulnerabilities/${vulnerabilityId}/retests/${retest.id}/`);
+            fetchRetests();
+        } catch (error) {
+            console.error('Failed to delete retest', error);
+        }
     };
 
     const getStatusBadge = (status: string | null) => {
@@ -284,14 +295,24 @@ export function RetestCard({ companyId, projectId, vulnerabilityId }: RetestCard
                                             </div>
                                         </div>
                                         {canEdit && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7"
-                                                onClick={() => handleEdit(retest)}
-                                            >
-                                                <Pencil className="h-3 w-3" />
-                                            </Button>
+                                            <div className="flex gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() => handleEdit(retest)}
+                                                >
+                                                    <Pencil className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                                    onClick={() => handleDelete(retest)}
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
 

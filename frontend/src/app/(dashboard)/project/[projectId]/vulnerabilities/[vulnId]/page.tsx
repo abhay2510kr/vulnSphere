@@ -13,6 +13,8 @@ import { RetestCard } from '@/components/vulnerabilities/retest-card';
 import { VulnerabilityComments } from '@/components/vulnerabilities/vulnerability-comments';
 import { RetestRequestButton } from '@/components/vulnerabilities/retest-request-button';
 import { useAuth } from '@/hooks/use-auth';
+import { SeverityBadge } from '@/components/vulnerabilities/severity-badge';
+import { StatusBadge } from '@/components/vulnerabilities/status-badge';
 
 interface Vulnerability {
     id: string;
@@ -73,28 +75,7 @@ export default function VulnerabilityViewPage() {
         fetchData();
     }, [projectId, vulnId]);
 
-    const getSeverityBadge = (severity: string) => {
-        const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
-            CRITICAL: { variant: 'destructive', className: 'bg-red-600 hover:bg-red-700' },
-            HIGH: { variant: 'destructive', className: 'bg-orange-600 hover:bg-orange-700' },
-            MEDIUM: { variant: 'default', className: 'bg-yellow-600 hover:bg-yellow-700' },
-            LOW: { variant: 'secondary', className: 'bg-blue-600 hover:bg-blue-700' },
-            INFO: { variant: 'outline', className: '' },
-        };
-        const config = variants[severity] || variants.INFO;
-        return <Badge variant={config.variant} className={config.className}>{severity}</Badge>;
-    };
 
-    const getStatusBadge = (status: string) => {
-        const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-            OPEN: 'destructive',
-            IN_PROGRESS: 'secondary',
-            RESOLVED: 'default',
-            ACCEPTED_RISK: 'outline',
-            FALSE_POSITIVE: 'outline',
-        };
-        return <Badge variant={variants[status] || 'default'}>{status.replace('_', ' ')}</Badge>;
-    };
 
     if (loading) {
         return (
@@ -154,11 +135,15 @@ export default function VulnerabilityViewPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <p className="text-sm text-muted-foreground">Severity</p>
-                            <div className="mt-1">{getSeverityBadge(vulnerability.severity)}</div>
+                            <div className="mt-1">
+                                <SeverityBadge severity={vulnerability.severity} />
+                            </div>
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Status</p>
-                            <div className="mt-1">{getStatusBadge(vulnerability.status)}</div>
+                            <div className="mt-1">
+                                <StatusBadge status={vulnerability.status} />
+                            </div>
                         </div>
                         {vulnerability.cvss_base_score && (
                             <div>

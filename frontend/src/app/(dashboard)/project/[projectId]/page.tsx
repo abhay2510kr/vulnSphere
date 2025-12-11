@@ -29,6 +29,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SeverityBadge } from '@/components/vulnerabilities/severity-badge';
+import { StatusBadge } from '@/components/vulnerabilities/status-badge';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -257,27 +259,7 @@ export default function ProjectDetailPage() {
         }
     };
 
-    const getSeverityColor = (severity: string) => {
-        switch (severity) {
-            case 'CRITICAL': return 'destructive';
-            case 'HIGH': return 'destructive';
-            case 'MEDIUM': return 'default';
-            case 'LOW': return 'secondary';
-            case 'INFO': return 'outline';
-            default: return 'outline';
-        }
-    };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'OPEN': return 'destructive';
-            case 'IN_PROGRESS': return 'default';
-            case 'RESOLVED': return 'outline';
-            case 'ACCEPTED_RISK': return 'secondary';
-            case 'FALSE_POSITIVE': return 'outline';
-            default: return 'outline';
-        }
-    };
 
     if (error) {
         return (
@@ -405,7 +387,7 @@ export default function ProjectDetailPage() {
                                 </SelectContent>
                             </Select>
                         ) : (
-                            <Badge variant={getStatusColor(project.status)}>
+                            <Badge variant="outline">
                                 {project.status.replace('_', ' ')}
                             </Badge>
                         )}
@@ -468,11 +450,11 @@ export default function ProjectDetailPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="ALL">All Severities</SelectItem>
-                                    <SelectItem value="CRITICAL">Critical</SelectItem>
-                                    <SelectItem value="HIGH">High</SelectItem>
-                                    <SelectItem value="MEDIUM">Medium</SelectItem>
-                                    <SelectItem value="LOW">Low</SelectItem>
-                                    <SelectItem value="INFO">Info</SelectItem>
+                                    <SelectItem value="CRITICAL"><SeverityBadge severity="CRITICAL" grow /></SelectItem>
+                                    <SelectItem value="HIGH"><SeverityBadge severity="HIGH" grow /></SelectItem>
+                                    <SelectItem value="MEDIUM"><SeverityBadge severity="MEDIUM" grow /></SelectItem>
+                                    <SelectItem value="LOW"><SeverityBadge severity="LOW" grow /></SelectItem>
+                                    <SelectItem value="INFO"><SeverityBadge severity="INFO" grow /></SelectItem>
                                 </SelectContent>
                             </Select>
                             <Select value={vulnStatusFilter} onValueChange={setVulnStatusFilter}>
@@ -481,11 +463,11 @@ export default function ProjectDetailPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="ALL">All Statuses</SelectItem>
-                                    <SelectItem value="OPEN">Open</SelectItem>
-                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                    <SelectItem value="RESOLVED">Resolved</SelectItem>
-                                    <SelectItem value="ACCEPTED_RISK">Accepted Risk</SelectItem>
-                                    <SelectItem value="FALSE_POSITIVE">False Positive</SelectItem>
+                                    <SelectItem value="OPEN"><StatusBadge status="OPEN" grow /></SelectItem>
+                                    <SelectItem value="IN_PROGRESS"><StatusBadge status="IN_PROGRESS" grow /></SelectItem>
+                                    <SelectItem value="RESOLVED"><StatusBadge status="RESOLVED" grow /></SelectItem>
+                                    <SelectItem value="ACCEPTED_RISK"><StatusBadge status="ACCEPTED_RISK" grow /></SelectItem>
+                                    <SelectItem value="FALSE_POSITIVE"><StatusBadge status="FALSE_POSITIVE" grow /></SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -521,21 +503,24 @@ export default function ProjectDetailPage() {
                                         </TableHeader>
                                         <TableBody>
                                             {paginatedVulnerabilities.map((vuln) => (
-                                                <TableRow key={vuln.id}>
+                                                <TableRow
+                                                    key={vuln.id}
+                                                    className="cursor-pointer hover:bg-muted/50"
+                                                    onClick={() => router.push(`/project/${projectId}/vulnerabilities/${vuln.id}`)}
+                                                >
                                                     <TableCell className="font-medium">{vuln.title}</TableCell>
                                                     <TableCell>
-                                                        <Badge variant={getSeverityColor(vuln.severity)}>
-                                                            {vuln.severity}
-                                                        </Badge>
+                                                        <SeverityBadge severity={vuln.severity} grow />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant={getStatusColor(vuln.status)}>
-                                                            {vuln.status.replace('_', ' ')}
-                                                        </Badge>
+                                                        <StatusBadge status={vuln.status} grow />
                                                     </TableCell>
                                                     <TableCell>{vuln.cvss_base_score ? Number(vuln.cvss_base_score).toFixed(1) : 'N/A'}</TableCell>
                                                     <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
+                                                        <div
+                                                            className="flex justify-end gap-2"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
                                                             <Button variant="ghost" size="sm" asChild>
                                                                 <Link href={`/project/${projectId}/vulnerabilities/${vuln.id}`}>
                                                                     <Eye className="h-4 w-4" />

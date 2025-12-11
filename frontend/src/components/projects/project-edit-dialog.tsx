@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import api from '@/lib/api';
 
 interface Project {
@@ -20,6 +21,7 @@ interface Project {
     company: string;
     title: string;
     engagement_type: string;
+    status: string;
     start_date: string;
     end_date: string;
     summary: string;
@@ -38,6 +40,7 @@ export function ProjectEditDialog({ project, open, onOpenChange, onSuccess }: Pr
     const [formData, setFormData] = useState({
         title: '',
         engagement_type: '',
+        status: '',
         start_date: '',
         end_date: '',
         summary: '',
@@ -48,6 +51,7 @@ export function ProjectEditDialog({ project, open, onOpenChange, onSuccess }: Pr
             setFormData({
                 title: project.title,
                 engagement_type: project.engagement_type,
+                status: project.status || 'DRAFT',
                 start_date: project.start_date,
                 end_date: project.end_date,
                 summary: project.summary || '',
@@ -107,6 +111,23 @@ export function ProjectEditDialog({ project, open, onOpenChange, onSuccess }: Pr
                                 value={formData.engagement_type}
                                 onChange={(e) => setFormData({ ...formData, engagement_type: e.target.value })}
                             />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-status">Status *</Label>
+                            <Select
+                                value={formData.status}
+                                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="DRAFT">Draft</SelectItem>
+                                    <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                                    <SelectItem value="FINAL">Final</SelectItem>
+                                    <SelectItem value="ARCHIVED">Archived</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
