@@ -167,28 +167,107 @@ class ReportGenerator:
         generated_report_instance.save()
 
     def _generate_html(self, template, context, report_instance):
-        """Generate HTML report using Jinja2 template"""
+        """Generate HTML report using secure Jinja2 template"""
         try:
             # Read the template file
             template_content = template.file.read().decode('utf-8')
             
-            # Create Jinja2 template
-            from jinja2 import Template
-            jinja_template = Template(template_content)
+            # Create secure Jinja2 environment
+            from jinja2.sandbox import SandboxedEnvironment
+            from jinja2 import TemplateSyntaxError
+            
+            env = SandboxedEnvironment(
+                autoescape=True,
+                line_statement_prefix=False,
+                line_comment_prefix=False,
+                trim_blocks=True,
+                lstrip_blocks=True
+            )
+            
+            # Custom security functions
+            def is_safe_attribute(obj, attr, value):
+                """Strict attribute access control"""
+                # Allow only basic attributes on primitive types
+                if obj is None:
+                    return False
+                
+                # Allow basic string methods
+                if isinstance(obj, str):
+                    safe_attrs = {'upper', 'lower', 'title', 'strip', 'replace', 'split', 'join', 'format', 'startswith', 'endswith', 'count', 'find', 'rfind'}
+                    return attr in safe_attrs
+                
+                # Allow basic list methods
+                if isinstance(obj, (list, tuple)):
+                    safe_attrs = {'len', 'count', 'index', 'sort'}
+                    return attr in safe_attrs
+                
+                # Allow basic dict methods
+                if isinstance(obj, dict):
+                    safe_attrs = {'keys', 'values', 'items', 'get'}
+                    return attr in safe_attrs
+                
+                # Allow basic number methods
+                if isinstance(obj, (int, float)):
+                    safe_attrs = {'__str__', '__repr__'}
+                    return attr in safe_attrs
+                
+                return False
+            
+            def is_safe_callable(obj):
+                """Strict callable access control"""
+                # Only allow built-in safe functions
+                safe_callables = {
+                    str.upper, str.lower, str.title, str.strip, str.replace, 
+                    str.split, str.join, str.format, str.startswith, str.endswith,
+                    len, str, int, float, bool
+                }
+                return obj in safe_callables
+            
+            # Apply security policies
+            env.is_safe_attribute = is_safe_attribute
+            env.is_safe_callable = is_safe_callable
+            
+            # Create template from string (no filesystem loader)
+            jinja_template = env.from_string(template_content)
+            
+            # Sanitize context to only include primitive data structures
+            sanitized_context = self._sanitize_context(context)
             
             # Add today's date to context
             from datetime import date
-            context['today'] = date.today().strftime('%B %d, %Y')
+            sanitized_context['today'] = date.today().strftime('%B %d, %Y')
             
             # Render the template
-            html_output = jinja_template.render(context)
+            html_output = jinja_template.render(sanitized_context)
             
             # Save the output
             output_filename = f'report_{report_instance.id}.html'
             report_instance.file.save(output_filename, ContentFile(html_output.encode('utf-8')))
             
+        except TemplateSyntaxError as e:
+            raise Exception(f"Template syntax error: {str(e)}")
         except Exception as e:
             raise Exception(f"Error generating HTML report: {str(e)}")
+    
+    def _sanitize_context(self, context):
+        """Sanitize context to only include primitive data structures"""
+        def sanitize_value(value):
+            # Handle primitive types
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                return value
+            
+            # Handle lists and tuples
+            if isinstance(value, (list, tuple)):
+                return [sanitize_value(item) for item in value]
+            
+            # Handle dictionaries
+            if isinstance(value, dict):
+                return {str(k): sanitize_value(v) for k, v in value.items()}
+            
+            # For any other objects, convert to string representation
+            return str(value)
+        
+        return {str(k): sanitize_value(v) for k, v in context.items()}
     
     def get_project_context(self, project, inline_images=False):
         """Get comprehensive project context for report generation"""

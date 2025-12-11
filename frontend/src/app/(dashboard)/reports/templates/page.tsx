@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { ReportTemplate } from '@/lib/types';
 import Link from 'next/link';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { User, fetchCurrentUser, isAdmin } from '@/lib/auth-utils';
 
 export default function TemplatesPage() {
     const [templates, setTemplates] = useState<ReportTemplate[]>([]);
@@ -19,6 +20,7 @@ export default function TemplatesPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate | null>(null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     const fetchTemplates = async () => {
         setLoading(true);
@@ -34,6 +36,14 @@ export default function TemplatesPage() {
 
     useEffect(() => {
         fetchTemplates();
+    }, []);
+
+    useEffect(() => {
+        const loadUser = async () => {
+            const user = await fetchCurrentUser();
+            setCurrentUser(user);
+        };
+        loadUser();
     }, []);
 
     const handleEdit = (template: ReportTemplate) => {
@@ -62,10 +72,12 @@ export default function TemplatesPage() {
                             Manage Reports
                         </Link>
                     </Button>
-                    <Button onClick={() => setDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Upload Template
-                    </Button>
+                    {isAdmin(currentUser) && (
+                        <Button onClick={() => setDialogOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Upload Template
+                        </Button>
+                    )}
                 </div>
             </div>
 
