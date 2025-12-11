@@ -22,6 +22,9 @@ COPY . .
 # Create media directories
 RUN mkdir -p /app/media/report_templates /app/media/vuln_templates /app/media/generated_reports
 
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
 # Make scripts executable
 RUN chmod +x /app/docker-entrypoint.sh
 
