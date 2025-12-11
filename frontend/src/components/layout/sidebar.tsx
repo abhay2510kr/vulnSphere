@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { LayoutDashboard, Building2, Shield, FileText, Settings, LogOut, Sun, Moon, Users, ShieldAlert, Activity } from 'lucide-react';
+import { LayoutDashboard, Building2, Shield, FileText, Settings, LogOut, Sun, Moon, Users, ShieldAlert, Activity, FolderKanban } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
@@ -58,7 +58,7 @@ export function Sidebar({ className }: SidebarProps) {
                         </Button>
                         <Button variant={pathname === '/projects' ? 'secondary' : 'ghost'} className="w-full justify-start" asChild>
                             <Link href="/projects">
-                                <FileText className="mr-2 h-4 w-4" />
+                                <FolderKanban className="mr-2 h-4 w-4" />
                                 Projects
                             </Link>
                         </Button>

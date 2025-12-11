@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -12,12 +12,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
+interface Company {
+    id: string;
+    name: string;
+}
+
 interface ProjectCreateDialogProps {
-    companyId: string;
+    companyId?: string; // Now optional
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
@@ -27,6 +33,8 @@ export function ProjectCreateDialog({ companyId, open, onOpenChange, onSuccess }
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string>(companyId || '');
 
     // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split('T')[0];
@@ -39,13 +47,45 @@ export function ProjectCreateDialog({ companyId, open, onOpenChange, onSuccess }
         summary: '',
     });
 
+    // Fetch companies if companyId is not provided
+    useEffect(() => {
+        if (!companyId && open) {
+            fetchCompanies();
+        }
+    }, [companyId, open]);
+
+    // Update selectedCompanyId when companyId prop changes
+    useEffect(() => {
+        if (companyId) {
+            setSelectedCompanyId(companyId);
+        }
+    }, [companyId]);
+
+    const fetchCompanies = async () => {
+        try {
+            const res = await api.get('/companies/');
+            setCompanies(Array.isArray(res.data) ? res.data : (res.data.results || []));
+        } catch (err) {
+            console.error('Failed to fetch companies', err);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
+        // Use companyId from props or selected company
+        const targetCompanyId = companyId || selectedCompanyId;
+
+        if (!targetCompanyId) {
+            setError('Please select a company');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const response = await api.post(`/companies/${companyId}/projects/`, formData);
+            const response = await api.post(`/companies/${targetCompanyId}/projects/`, formData);
             const createdProject = response.data;
 
             if (onSuccess) {
@@ -65,6 +105,7 @@ export function ProjectCreateDialog({ companyId, open, onOpenChange, onSuccess }
                 end_date: today,
                 summary: '',
             });
+            setSelectedCompanyId(companyId || '');
         } catch (err: any) {
             const errorMessage = err.response?.data?.detail ||
                 err.response?.data?.title?.[0] ||
@@ -91,6 +132,26 @@ export function ProjectCreateDialog({ companyId, open, onOpenChange, onSuccess }
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
+
+                        {/* Show company selector only if companyId is not provided */}
+                        {!companyId && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="company">Company *</Label>
+                                <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+                                    <SelectTrigger id="company">
+                                        <SelectValue placeholder="Select a company" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {companies.map((company) => (
+                                            <SelectItem key={company.id} value={company.id}>
+                                                {company.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
                         <div className="grid gap-2">
                             <Label htmlFor="title">Project Title *</Label>
                             <Input

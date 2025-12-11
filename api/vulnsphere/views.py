@@ -576,15 +576,18 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
             generator = ReportGenerator()
             context = {}
             
+            # Determine if we should embed images inline (for HTML only)
+            inline_images = (output_format == 'HTML')
+            
             if project_id:
                 project = get_object_or_404(Project, pk=project_id)
                 report_instance.project = project
                 report_instance.company = project.company
-                context = generator.get_project_context(project)
+                context = generator.get_project_context(project, inline_images=inline_images)
             elif company_id:
                 company = get_object_or_404(Company, pk=company_id)
                 report_instance.company = company
-                context = generator.get_company_context(company)
+                context = generator.get_company_context(company, inline_images=inline_images)
             
             report_instance.save()
             

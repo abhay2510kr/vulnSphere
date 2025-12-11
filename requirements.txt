@@ -7,3 +7,5 @@ django-filter
 drf-nested-routers
 django-cors-headers
 docxtpl
+markdown2
+Pygments

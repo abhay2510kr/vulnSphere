@@ -319,8 +319,8 @@ export default function CompanyDetailPage() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card>
-                            <CardContent className="pt-6">
+                        <>
+                            <div className="rounded-md border">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -363,14 +363,14 @@ export default function CompanyDetailPage() {
                                         ))}
                                     </TableBody>
                                 </Table>
-                                <TablePagination
-                                    currentPage={projectPage}
-                                    totalItems={projects.length}
-                                    itemsPerPage={ITEMS_PER_PAGE}
-                                    onPageChange={setProjectPage}
-                                />
-                            </CardContent>
-                        </Card>
+                            </div>
+                            <TablePagination
+                                currentPage={projectPage}
+                                totalItems={projects.length}
+                                itemsPerPage={ITEMS_PER_PAGE}
+                                onPageChange={setProjectPage}
+                            />
+                        </>
                     )}
                 </TabsContent>
 
@@ -396,8 +396,8 @@ export default function CompanyDetailPage() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card>
-                            <CardContent className="pt-6">
+                        <>
+                            <div className="rounded-md border">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -443,14 +443,14 @@ export default function CompanyDetailPage() {
                                         ))}
                                     </TableBody>
                                 </Table>
-                                <TablePagination
-                                    currentPage={assetPage}
-                                    totalItems={assets.length}
-                                    itemsPerPage={ITEMS_PER_PAGE}
-                                    onPageChange={setAssetPage}
-                                />
-                            </CardContent>
-                        </Card>
+                            </div>
+                            <TablePagination
+                                currentPage={assetPage}
+                                totalItems={assets.length}
+                                itemsPerPage={ITEMS_PER_PAGE}
+                                onPageChange={setAssetPage}
+                            />
+                        </>
                     )}
                 </TabsContent>
             </Tabs>

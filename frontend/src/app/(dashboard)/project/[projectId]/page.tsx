@@ -14,14 +14,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { VulnerabilityDeleteDialog } from '@/components/vulnerabilities/vulnerability-delete-dialog';
 import { VulnerabilityCloneDialog } from '@/components/vulnerabilities/vulnerability-clone-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Copy, Shield, Search, Eye, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Copy, Shield, Search, Eye, Save, X, FileText } from 'lucide-react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { MDXEditorComponent } from '@/components/mdx-editor';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ITEMS_PER_PAGE = 10;
+
+interface ReportTemplate {
+    id: string;
+    name: string;
+    file: string;
+}
 
 interface Project {
     id: string;
@@ -87,6 +102,13 @@ export default function ProjectDetailPage() {
     // Tab state
     const [activeTab, setActiveTab] = useState('vulnerabilities');
 
+    // Report generation state
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [templates, setTemplates] = useState<ReportTemplate[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+    const [generating, setGenerating] = useState(false);
+    const [reportError, setReportError] = useState('');
+
     const fetchProjectData = async () => {
         try {
             setLoading(true);
@@ -117,6 +139,46 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         fetchProjectData();
     }, [projectId]);
+
+    useEffect(() => {
+        if (reportDialogOpen) {
+            fetchTemplates();
+        }
+    }, [reportDialogOpen]);
+
+    const fetchTemplates = async () => {
+        try {
+            const res = await api.get('/report-templates/');
+            setTemplates(Array.isArray(res.data) ? res.data : (res.data.results || []));
+        } catch (err) {
+            console.error('Failed to fetch templates', err);
+        }
+    };
+
+    const handleGenerateReport = async () => {
+        if (!selectedTemplate) {
+            setReportError('Please select a template.');
+            return;
+        }
+
+        setGenerating(true);
+        setReportError('');
+
+        try {
+            await api.post('/generated-reports/generate/', {
+                template_id: selectedTemplate,
+                project_id: projectId,
+            });
+            setReportDialogOpen(false);
+            setSelectedTemplate('');
+            // Optionally show success message or redirect
+        } catch (err: any) {
+            console.error(err);
+            setReportError(err.response?.data?.detail || err.response?.data?.error || 'Failed to generate report.');
+        } finally {
+            setGenerating(false);
+        }
+    };
 
     // Filter vulnerabilities
     const filteredVulnerabilities = vulnerabilities.filter(vuln => {
@@ -287,10 +349,16 @@ export default function ProjectDetailPage() {
                         </Button>
                     </div>
                 ) : (
-                    <Button variant="outline" onClick={toggleEdit}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit Project
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={toggleEdit}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit Project
+                        </Button>
+                        <Button onClick={() => setReportDialogOpen(true)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Create Report
+                        </Button>
+                    </div>
                 )}
             </div>
 
@@ -372,76 +440,75 @@ export default function ProjectDetailPage() {
                 </TabsList>
 
                 <TabsContent value="vulnerabilities" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle>Vulnerabilities</CardTitle>
-                                <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Vulnerability
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex gap-4">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search vulnerabilities..."
-                                        value={vulnSearchQuery}
-                                        onChange={(e) => {
-                                            setVulnSearchQuery(e.target.value);
-                                            setVulnPage(1);
-                                        }}
-                                        className="pl-8"
-                                    />
-                                </div>
-                                <Select value={vulnSeverityFilter} onValueChange={setVulnSeverityFilter}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Severity" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="ALL">All Severities</SelectItem>
-                                        <SelectItem value="CRITICAL">Critical</SelectItem>
-                                        <SelectItem value="HIGH">High</SelectItem>
-                                        <SelectItem value="MEDIUM">Medium</SelectItem>
-                                        <SelectItem value="LOW">Low</SelectItem>
-                                        <SelectItem value="INFO">Info</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Select value={vulnStatusFilter} onValueChange={setVulnStatusFilter}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="ALL">All Statuses</SelectItem>
-                                        <SelectItem value="OPEN">Open</SelectItem>
-                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                        <SelectItem value="RESOLVED">Resolved</SelectItem>
-                                        <SelectItem value="ACCEPTED_RISK">Accepted Risk</SelectItem>
-                                        <SelectItem value="FALSE_POSITIVE">False Positive</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold">Vulnerabilities</h2>
+                        <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Vulnerability
+                        </Button>
+                    </div>
 
-                            {filteredVulnerabilities.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">No vulnerabilities yet</h3>
-                                    <p className="text-muted-foreground mb-4">
-                                        {vulnSearchQuery || vulnSeverityFilter !== 'ALL' || vulnStatusFilter !== 'ALL'
-                                            ? 'No vulnerabilities match your filters.'
-                                            : 'Add your first vulnerability to get started'}
-                                    </p>
-                                    {!(vulnSearchQuery || vulnSeverityFilter !== 'ALL' || vulnStatusFilter !== 'ALL') && (
-                                        <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Add Vulnerability
-                                        </Button>
-                                    )}
-                                </div>
-                            ) : (
-                                <>
+                    <div className="space-y-4">
+                        <div className="flex gap-4">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search vulnerabilities..."
+                                    value={vulnSearchQuery}
+                                    onChange={(e) => {
+                                        setVulnSearchQuery(e.target.value);
+                                        setVulnPage(1);
+                                    }}
+                                    className="pl-8"
+                                />
+                            </div>
+                            <Select value={vulnSeverityFilter} onValueChange={setVulnSeverityFilter}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Severity" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">All Severities</SelectItem>
+                                    <SelectItem value="CRITICAL">Critical</SelectItem>
+                                    <SelectItem value="HIGH">High</SelectItem>
+                                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                                    <SelectItem value="LOW">Low</SelectItem>
+                                    <SelectItem value="INFO">Info</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={vulnStatusFilter} onValueChange={setVulnStatusFilter}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">All Statuses</SelectItem>
+                                    <SelectItem value="OPEN">Open</SelectItem>
+                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                    <SelectItem value="RESOLVED">Resolved</SelectItem>
+                                    <SelectItem value="ACCEPTED_RISK">Accepted Risk</SelectItem>
+                                    <SelectItem value="FALSE_POSITIVE">False Positive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {filteredVulnerabilities.length === 0 ? (
+                            <div className="text-center py-12">
+                                <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold mb-2">No vulnerabilities yet</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    {vulnSearchQuery || vulnSeverityFilter !== 'ALL' || vulnStatusFilter !== 'ALL'
+                                        ? 'No vulnerabilities match your filters.'
+                                        : 'Add your first vulnerability to get started'}
+                                </p>
+                                {!(vulnSearchQuery || vulnSeverityFilter !== 'ALL' || vulnStatusFilter !== 'ALL') && (
+                                    <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add Vulnerability
+                                    </Button>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="rounded-md border">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -505,57 +572,58 @@ export default function ProjectDetailPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                    <TablePagination
-                                        currentPage={vulnPage}
-                                        totalItems={filteredVulnerabilities.length}
-                                        itemsPerPage={ITEMS_PER_PAGE}
-                                        onPageChange={setVulnPage}
-                                    />
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                                </div>
+                                <TablePagination
+                                    currentPage={vulnPage}
+                                    totalItems={filteredVulnerabilities.length}
+                                    itemsPerPage={ITEMS_PER_PAGE}
+                                    onPageChange={setVulnPage}
+                                />
+                            </>
+                        )}
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="assets" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Project Assets</CardTitle>
-                            <CardDescription>Manage assets associated with this project</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex gap-4">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search assets..."
-                                        value={assetSearchQuery}
-                                        onChange={(e) => {
-                                            setAssetSearchQuery(e.target.value);
-                                            setAssetPage(1);
-                                        }}
-                                        className="pl-8"
-                                    />
-                                </div>
-                                <Select value={assetFilter} onValueChange={setAssetFilter}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="ALL">All Assets</SelectItem>
-                                        <SelectItem value="ATTACHED">Attached</SelectItem>
-                                        <SelectItem value="UNATTACHED">Not Attached</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    <div className="mb-4">
+                        <h2 className="text-xl font-semibold">Project Assets</h2>
+                        <p className="text-sm text-muted-foreground">Manage assets associated with this project</p>
+                    </div>
 
-                            {filteredAssets.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                                    <p className="text-muted-foreground">No assets found</p>
-                                </div>
-                            ) : (
-                                <>
+                    <div className="space-y-4">
+                        <div className="flex gap-4">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search assets..."
+                                    value={assetSearchQuery}
+                                    onChange={(e) => {
+                                        setAssetSearchQuery(e.target.value);
+                                        setAssetPage(1);
+                                    }}
+                                    className="pl-8"
+                                />
+                            </div>
+                            <Select value={assetFilter} onValueChange={setAssetFilter}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">All Assets</SelectItem>
+                                    <SelectItem value="ATTACHED">Attached</SelectItem>
+                                    <SelectItem value="UNATTACHED">Not Attached</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {filteredAssets.length === 0 ? (
+                            <div className="text-center py-12">
+                                <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                <p className="text-muted-foreground">No assets found</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="rounded-md border">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -602,16 +670,16 @@ export default function ProjectDetailPage() {
                                             })}
                                         </TableBody>
                                     </Table>
-                                    <TablePagination
-                                        currentPage={assetPage}
-                                        totalItems={filteredAssets.length}
-                                        itemsPerPage={ITEMS_PER_PAGE}
-                                        onPageChange={setAssetPage}
-                                    />
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                                </div>
+                                <TablePagination
+                                    currentPage={assetPage}
+                                    totalItems={filteredAssets.length}
+                                    itemsPerPage={ITEMS_PER_PAGE}
+                                    onPageChange={setAssetPage}
+                                />
+                            </>
+                        )}
+                    </div>
                 </TabsContent>
             </Tabs>
 
@@ -632,6 +700,62 @@ export default function ProjectDetailPage() {
                 onOpenChange={setCloneDialogOpen}
                 onSuccess={fetchProjectData}
             />
+
+            <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Generate Report for {project.title}</DialogTitle>
+                        <DialogDescription>
+                            Select a template to generate a report for this project.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
+                        {reportError && (
+                            <Alert variant="destructive">
+                                <AlertDescription>{reportError}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        <div className="grid gap-2">
+                            <Label>Report Template</Label>
+                            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a template" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {templates.map(t => {
+                                        const isHtml = t.file?.toLowerCase().endsWith('.html');
+                                        const isDocx = t.file?.toLowerCase().endsWith('.docx');
+                                        const type = isHtml ? 'HTML' : isDocx ? 'DOCX' : 'Unknown';
+                                        const badgeColor = isHtml ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
+
+                                        return (
+                                            <SelectItem key={t.id} value={t.id}>
+                                                <div className="flex items-center justify-between w-full gap-4">
+                                                    <span>{t.name}</span>
+                                                    <Badge variant="outline" className={`ml-2 text-xs py-0 h-5 ${badgeColor}`}>
+                                                        {type}
+                                                    </Badge>
+                                                </div>
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setReportDialogOpen(false)} disabled={generating}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleGenerateReport} disabled={generating}>
+                            {generating ? 'Generating...' : 'Generate Report'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

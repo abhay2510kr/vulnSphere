@@ -6,10 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { TablePagination } from '@/components/ui/table-pagination';
 import api from '@/lib/api';
+import { ProjectEditDialog } from '@/components/projects/project-edit-dialog';
+import { ProjectDeleteDialog } from '@/components/projects/project-delete-dialog';
+import { ProjectCreateDialog } from '@/components/projects/project-create-dialog';
+import { Plus } from 'lucide-react';
 
 interface Company {
     id: string;
@@ -25,6 +29,8 @@ interface Project {
     status: string;
     start_date: string;
     end_date: string;
+    summary: string;
+    scope_description: string;
     created_at: string;
 }
 
@@ -37,6 +43,12 @@ export default function ProjectsPage() {
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+
+    // Dialog state
+    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -91,6 +103,16 @@ export default function ProjectsPage() {
         return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
     };
 
+    const handleEdit = (project: Project) => {
+        setSelectedProject(project);
+        setEditDialogOpen(true);
+    };
+
+    const handleDelete = (project: Project) => {
+        setSelectedProject(project);
+        setDeleteDialogOpen(true);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between space-y-2">
@@ -100,6 +122,10 @@ export default function ProjectsPage() {
                         View and filter all projects across companies.
                     </p>
                 </div>
+                <Button onClick={() => setCreateDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Project
+                </Button>
             </div>
 
             <div className="flex flex-col md:flex-row gap-4">
@@ -175,11 +201,19 @@ export default function ProjectsPage() {
                                     <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
                                     <TableCell>{new Date(project.end_date).toLocaleDateString()}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" asChild>
-                                            <Link href={`/project/${project.id}`}>
-                                                <Eye className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="ghost" size="sm" asChild>
+                                                <Link href={`/project/${project.id}`}>
+                                                    <Eye className="h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleDelete(project)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -193,6 +227,26 @@ export default function ProjectsPage() {
                 totalItems={totalCount}
                 itemsPerPage={20}
                 onPageChange={setPage}
+            />
+
+            <ProjectEditDialog
+                project={selectedProject}
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                onSuccess={fetchData}
+            />
+
+            <ProjectDeleteDialog
+                project={selectedProject}
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onSuccess={fetchData}
+            />
+
+            <ProjectCreateDialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                onSuccess={fetchData}
             />
         </div>
     );
