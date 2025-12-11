@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import api from '@/lib/api';
 
 interface CompanyCreateDialogProps {
@@ -31,6 +32,7 @@ export function CompanyCreateDialog({ open, onOpenChange, onSuccess }: CompanyCr
         contact_email: '',
         address: '',
         notes: '',
+        is_active: true,
     });
 
     // Auto-generate slug from name
@@ -57,6 +59,7 @@ export function CompanyCreateDialog({ open, onOpenChange, onSuccess }: CompanyCr
                 contact_email: '',
                 address: '',
                 notes: '',
+                is_active: true,
             });
         } catch (err: any) {
             const errorMessage = err.response?.data?.detail ||
@@ -139,6 +142,17 @@ export function CompanyCreateDialog({ open, onOpenChange, onSuccess }: CompanyCr
                                 rows={3}
                             />
                         </div>
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id="is-active"
+                                checked={formData.is_active}
+                                onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_active: checked })}
+                            />
+                            <Label htmlFor="is-active">Active Company</Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Inactive companies will be hidden from clients and testers.
+                        </p>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

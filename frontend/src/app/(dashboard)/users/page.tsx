@@ -139,8 +139,7 @@ export default function UsersPage() {
                 </div>
             ) : (
                 <>
-                    <div className="rounded-md border">
-                        <Table>
+                    <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Name</TableHead>
@@ -203,7 +202,6 @@ export default function UsersPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                    </div>
                     <TablePagination
                         currentPage={currentPage}
                         totalItems={filteredUsers.length}

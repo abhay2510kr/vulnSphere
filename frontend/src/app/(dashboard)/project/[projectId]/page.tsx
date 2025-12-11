@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { VulnerabilityDeleteDialog } from '@/components/vulnerabilities/vulnerability-delete-dialog';
 import { VulnerabilityCloneDialog } from '@/components/vulnerabilities/vulnerability-clone-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Copy, Shield, Search, Eye, Save, X, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Copy, Shield, Search, Eye, Save, X, FileText, Minus } from 'lucide-react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { MDXEditorComponent } from '@/components/mdx-editor';
@@ -31,6 +31,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SeverityBadge } from '@/components/vulnerabilities/severity-badge';
 import { StatusBadge } from '@/components/vulnerabilities/status-badge';
+import { useAuth } from '@/hooks/use-auth';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -75,6 +76,7 @@ export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
     const projectId = params.projectId as string;
+    const { canEdit } = useAuth();
 
     const [project, setProject] = useState<Project | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -226,6 +228,26 @@ export default function ProjectDetailPage() {
             await fetchProjectData();
         } catch (err) {
             console.error('Failed to detach asset', err);
+        }
+    };
+
+    const handleAttachAllAssets = async () => {
+        if (!project) return;
+        try {
+            await api.post(`/companies/${project.company}/projects/${projectId}/assets/attach_all/`);
+            await fetchProjectData();
+        } catch (err) {
+            console.error('Failed to attach all assets', err);
+        }
+    };
+
+    const handleDetachAllAssets = async () => {
+        if (!project) return;
+        try {
+            await api.post(`/companies/${project.company}/projects/${projectId}/assets/detach_all/`);
+            await fetchProjectData();
+        } catch (err) {
+            console.error('Failed to detach all assets', err);
         }
     };
 
@@ -491,8 +513,7 @@ export default function ProjectDetailPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="rounded-md border">
-                                    <Table>
+                                <Table>
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Title</TableHead>
@@ -553,7 +574,6 @@ export default function ProjectDetailPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                </div>
                                 <TablePagination
                                     currentPage={vulnPage}
                                     totalItems={filteredVulnerabilities.length}
@@ -572,7 +592,7 @@ export default function ProjectDetailPage() {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 items-center">
                             <div className="relative flex-1">
                                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -595,6 +615,26 @@ export default function ProjectDetailPage() {
                                     <SelectItem value="UNATTACHED">Not Attached</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleAttachAllAssets}
+                                    disabled={!canEdit}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Attach All
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDetachAllAssets}
+                                    disabled={!canEdit}
+                                >
+                                    <Minus className="mr-2 h-4 w-4" />
+                                    Detach All
+                                </Button>
+                            </div>
                         </div>
 
                         {filteredAssets.length === 0 ? (
@@ -604,8 +644,7 @@ export default function ProjectDetailPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="rounded-md border">
-                                    <Table>
+                                <Table>
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Name</TableHead>
@@ -651,7 +690,6 @@ export default function ProjectDetailPage() {
                                             })}
                                         </TableBody>
                                     </Table>
-                                </div>
                                 <TablePagination
                                     currentPage={assetPage}
                                     totalItems={filteredAssets.length}

@@ -65,8 +65,7 @@ export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) 
     const showActions = canDelete;
 
     return (
-        <div className="rounded-md border">
-            <Table>
+        <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead>Date</TableHead>
@@ -170,7 +169,6 @@ export function ReportsTable({ reports, loading, onDelete }: ReportsTableProps) 
                     ))}
                 </TableBody>
             </Table>
-        </div>
     );
 }
 

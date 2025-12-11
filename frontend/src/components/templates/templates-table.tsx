@@ -134,8 +134,7 @@ export function TemplatesTable() {
                 </Select>
             </div>
 
-            <div className="rounded-md border">
-                <Table>
+            <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Title</TableHead>
@@ -194,7 +193,6 @@ export function TemplatesTable() {
                         )}
                     </TableBody>
                 </Table>
-            </div>
 
             <TablePagination
                 currentPage={page}

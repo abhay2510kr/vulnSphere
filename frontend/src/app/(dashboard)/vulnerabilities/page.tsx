@@ -66,20 +66,37 @@ export default function VulnerabilitiesPage() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const companiesData = await companiesRes.json();
-            setCompanies(Array.isArray(companiesData.results) ? companiesData.results : Array.isArray(companiesData) ? companiesData : []);
+            const allCompanies = Array.isArray(companiesData.results) ? companiesData.results : Array.isArray(companiesData) ? companiesData : [];
+            
+            // Get user role to determine if we should filter inactive companies
+            // For now, we'll assume we need to check user role - let me add this check
+            const userRes = await fetch('http://localhost:8000/api/v1/auth/user/', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const userData = await userRes.json();
+            const isAdmin = userData.role === 'ADMIN';
+            
+            // Filter inactive companies for non-admin users
+            const filteredCompanies = isAdmin ? allCompanies : allCompanies.filter((company: any) => company.is_active);
+            setCompanies(filteredCompanies);
 
             // Fetch projects
             const projectsRes = await fetch('http://localhost:8000/api/v1/projects/', {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const projectsData = await projectsRes.json();
-            setProjects(Array.isArray(projectsData.results) ? projectsData.results : Array.isArray(projectsData) ? projectsData : []);
+            const allProjects = Array.isArray(projectsData.results) ? projectsData.results : Array.isArray(projectsData) ? projectsData : [];
+            
+            // Filter projects to only show those from visible companies
+            const filteredProjects = allProjects.filter((project: any) => 
+                filteredCompanies.some((company: any) => company.id === project.company)
+            );
+            setProjects(filteredProjects);
 
-            // Fetch all vulnerabilities from all projects
+            // Fetch all vulnerabilities from visible projects
             const allVulns: Vulnerability[] = [];
-            const projectsList = Array.isArray(projectsData.results) ? projectsData.results : Array.isArray(projectsData) ? projectsData : [];
 
-            for (const project of projectsList) {
+            for (const project of filteredProjects) {
                 try {
                     const vulnsRes = await fetch(
                         `http://localhost:8000/api/v1/companies/${project.company}/projects/${project.id}/vulnerabilities/`,
@@ -214,52 +231,50 @@ export default function VulnerabilitiesPage() {
                 </div>
             </div>
 
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Project</TableHead>
+                        <TableHead>Severity</TableHead>
+                        <TableHead>Status</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {loading ? (
                         <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead>Company</TableHead>
-                            <TableHead>Project</TableHead>
-                            <TableHead>Severity</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableCell colSpan={5} className="text-center py-8">
+                                Loading...
+                            </TableCell>
                         </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8">
-                                    Loading...
+                    ) : filteredVulns.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                No vulnerabilities found
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        filteredVulns.map((vuln) => (
+                            <TableRow
+                                key={vuln.id}
+                                className="cursor-pointer hover:bg-muted/50"
+                                onClick={() => router.push(`/project/${vuln.project}/vulnerabilities/${vuln.id}`)}
+                            >
+                                <TableCell className="font-medium">{vuln.title}</TableCell>
+                                <TableCell>{getCompanyName(vuln.project)}</TableCell>
+                                <TableCell>{getProjectTitle(vuln.project)}</TableCell>
+                                <TableCell>
+                                    <SeverityBadge severity={vuln.severity} grow />
+                                </TableCell>
+                                <TableCell>
+                                    <StatusBadge status={vuln.status} grow />
                                 </TableCell>
                             </TableRow>
-                        ) : filteredVulns.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                    No vulnerabilities found
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredVulns.map((vuln) => (
-                                <TableRow
-                                    key={vuln.id}
-                                    className="cursor-pointer hover:bg-muted/50"
-                                    onClick={() => router.push(`/project/${vuln.project}/vulnerabilities/${vuln.id}`)}
-                                >
-                                    <TableCell className="font-medium">{vuln.title}</TableCell>
-                                    <TableCell>{getCompanyName(vuln.project)}</TableCell>
-                                    <TableCell>{getProjectTitle(vuln.project)}</TableCell>
-                                    <TableCell>
-                                        <SeverityBadge severity={vuln.severity} grow />
-                                    </TableCell>
-                                    <TableCell>
-                                        <StatusBadge status={vuln.status} grow />
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                        ))
+                    )}
+                </TableBody>
+            </Table>
 
             <TablePagination
                 currentPage={page}

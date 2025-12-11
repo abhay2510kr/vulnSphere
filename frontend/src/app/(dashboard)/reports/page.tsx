@@ -90,9 +90,13 @@ export default function ReportsPage() {
     const fetchCompanies = async () => {
         try {
             const response = await api.get('/companies/');
-            setCompanies(response.data.results || response.data);
+            const companiesData = response.data.results || response.data;
+            
+            // Filter inactive companies for non-admin users
+            const filteredCompanies = canEdit ? companiesData : companiesData.filter((company: any) => company.is_active);
+            setCompanies(filteredCompanies);
         } catch (error) {
-            console.error('Failed to fetch companies:', error);
+            console.error('Failed to fetch companies', error);
         }
     }
 

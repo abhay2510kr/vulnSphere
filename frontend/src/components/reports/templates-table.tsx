@@ -60,8 +60,7 @@ export function TemplatesTable({ templates, loading, onDelete, onEdit }: Templat
     }
 
     return (
-        <div className="rounded-md border">
-            <Table>
+        <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead>Name</TableHead>
@@ -151,6 +150,5 @@ export function TemplatesTable({ templates, loading, onDelete, onEdit }: Templat
                     })}
                 </TableBody>
             </Table>
-        </div>
     );
 }

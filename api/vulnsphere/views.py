@@ -1,6 +1,10 @@
-from rest_framework import viewsets, permissions, filters, decorators, response, status
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, permissions, status
+from rest_framework import decorators, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import User, Company, Asset, Project, Vulnerability, VulnerabilityAsset, Retest, Comment, Attachment, ActivityLog, ProjectAsset, ReportTemplate, GeneratedReport, VulnerabilityTemplate
 from .serializers import (
@@ -28,7 +32,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @decorators.action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
         serializer = self.get_serializer(request.user)
-        return response.Response(serializer.data)
+        return Response(serializer.data)
 
 class CompanyViewSet(viewsets.ModelViewSet):
     """
@@ -119,16 +123,16 @@ class AssetViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
         
         company_pk = self.kwargs.get('company_pk')
         if not company_pk:
-            return response.Response({'error': 'Company context required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Company context required'}, status=status.HTTP_400_BAD_REQUEST)
         
         company = get_object_or_404(Company, pk=company_pk)
         
         file = request.FILES.get('file')
         if not file:
-            return response.Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         if not file.name.endswith('.csv'):
-            return response.Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             content = file.read().decode('utf-8')
@@ -158,14 +162,14 @@ class AssetViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
                 except Exception as e:
                     errors.append({'row': row_num, 'error': str(e)})
             
-            return response.Response({
+            return Response({
                 'created': len(created),
                 'errors': errors,
                 'items': created
             }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
-            return response.Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ProjectViewSet(CompanyScopedMixin, viewsets.ModelViewSet):
     queryset = Project.objects.all()
@@ -239,10 +243,10 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
         vuln = self.get_object()
         new_status = request.data.get('status')
         if not new_status:
-             return response.Response({'error': 'Status required'}, status=status.HTTP_400_BAD_REQUEST)
+             return Response({'error': 'Status required'}, status=status.HTTP_400_BAD_REQUEST)
         
         if new_status not in Vulnerability.Status.values:
-             return response.Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+             return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
 
         old_status = vuln.status
         vuln.status = new_status
@@ -259,7 +263,7 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
             metadata={'old_status': old_status, 'new_status': new_status}
         )
         
-        return response.Response({'status': 'updated', 'new_status': new_status})
+        return Response({'status': 'updated', 'new_status': new_status})
 
     @decorators.action(detail=False, methods=['get'], url_path='csv-template')
     def csv_template(self, request, **kwargs):
@@ -289,16 +293,16 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
         company_pk = self.kwargs.get('company_pk')
         
         if not project_pk or not company_pk:
-            return response.Response({'error': 'Project context required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Project context required'}, status=status.HTTP_400_BAD_REQUEST)
         
         project = get_object_or_404(Project, pk=project_pk, company__pk=company_pk)
         
         file = request.FILES.get('file')
         if not file:
-            return response.Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         if not file.name.endswith('.csv'):
-            return response.Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             content = file.read().decode('utf-8')
@@ -346,14 +350,14 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     errors.append({'row': row_num, 'error': str(e)})
             
-            return response.Response({
+            return Response({
                 'created': len(created),
                 'errors': errors,
                 'items': created
             }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
-            return response.Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VulnerabilityAssetViewSet(viewsets.ModelViewSet):
@@ -481,7 +485,7 @@ class RetestViewSet(viewsets.ModelViewSet):
         # Check company access
         if request.user.role != 'ADMIN':
             if not request.user.companies.filter(pk=vulnerability.project.company.pk).exists():
-                return response.Response(
+                return Response(
                     {'error': 'You do not have access to this vulnerability'},
                     status=status.HTTP_403_FORBIDDEN
                 )
@@ -518,7 +522,7 @@ class RetestViewSet(viewsets.ModelViewSet):
         )
         
         serializer = self.get_serializer(retest)
-        return response.Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -651,7 +655,7 @@ class ProjectAssetViewSet(viewsets.ModelViewSet):
         asset_id = request.data.get('assetId')
         
         if not asset_id:
-            return response.Response(
+            return Response(
                 {'error': 'assetId is required'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -672,7 +676,7 @@ class ProjectAssetViewSet(viewsets.ModelViewSet):
             project_asset.attached_by = request.user
             project_asset.save()
         
-        return response.Response(AssetSerializer(asset).data, status=status.HTTP_201_CREATED)
+        return Response(AssetSerializer(asset).data, status=status.HTTP_201_CREATED)
     
     def destroy(self, request, *args, **kwargs):
         """Detach an asset from the project"""
@@ -688,7 +692,55 @@ class ProjectAssetViewSet(viewsets.ModelViewSet):
         )
         
         project_asset.delete()
-        return response.Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=['post'])
+    def attach_all(self, request, company_pk=None, project_pk=None):
+        """Attach all company assets to the project"""
+        project = get_object_or_404(Project, pk=project_pk, company__pk=company_pk)
+        
+        # Get all assets from the company that are not already attached
+        attached_asset_ids = ProjectAsset.objects.filter(
+            project=project
+        ).values_list('asset_id', flat=True)
+        
+        assets_to_attach = Asset.objects.filter(
+            company__pk=company_pk
+        ).exclude(
+            id__in=attached_asset_ids
+        )
+        
+        # Bulk create ProjectAsset objects
+        with transaction.atomic():
+            project_assets = []
+            for asset in assets_to_attach:
+                project_assets.append(ProjectAsset(
+                    project=project,
+                    asset=asset,
+                    attached_by=request.user,
+                    auto_attached=False
+                ))
+            
+            ProjectAsset.objects.bulk_create(project_assets)
+        
+        return Response({
+            'message': f'Attached {len(project_assets)} assets to the project',
+            'count': len(project_assets)
+        })
+    
+    @action(detail=False, methods=['post'])
+    def detach_all(self, request, company_pk=None, project_pk=None):
+        """Detach all assets from the project"""
+        project = get_object_or_404(Project, pk=project_pk, company__pk=company_pk)
+        
+        # Get all attached assets and delete them
+        with transaction.atomic():
+            deleted_count, _ = ProjectAsset.objects.filter(project=project).delete()
+        
+        return Response({
+            'message': f'Detached {deleted_count} assets from the project',
+            'count': deleted_count
+        })
 
 class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ActivityLog.objects.all()
@@ -817,7 +869,7 @@ class DashboardStatsViewSet(viewsets.ViewSet):
                 'count': count
             })
         
-        return response.Response({
+        return Response({
             'total_vulnerabilities': total_vulnerabilities,
             'total_projects': total_projects,
             'critical_vulnerabilities': critical_vulnerabilities,
@@ -840,6 +892,29 @@ class ReportTemplateViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAuthenticated(), IsAdmin()]
         return [permissions.IsAuthenticated()]
+    
+    @decorators.action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        from django.http import FileResponse
+        import os
+        
+        template = self.get_object()
+        if not template.file:
+             return Response({'error': 'Template file not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        file_handle = template.file.open()
+        
+        # Set content type based on format
+        content_type = 'application/octet-stream'
+        filename = template.file.name.lower()
+        if filename.endswith('.html'):
+            content_type = 'text/html'
+        elif filename.endswith('.docx'):
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            
+        response = FileResponse(file_handle, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(template.file.name)}"'
+        return response
 
 class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
     queryset = VulnerabilityTemplate.objects.all()
@@ -873,7 +948,7 @@ class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
         
         template = self.get_object()
         if not template.file:
-             return response.Response({'error': 'Template file not found'}, status=status.HTTP_404_NOT_FOUND)
+             return Response({'error': 'Template file not found'}, status=status.HTTP_404_NOT_FOUND)
         
         file_handle = template.file.open()
         
@@ -915,10 +990,10 @@ class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
         
         file = request.FILES.get('file')
         if not file:
-            return response.Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         if not file.name.endswith('.csv'):
-            return response.Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             content = file.read().decode('utf-8')
@@ -953,14 +1028,14 @@ class VulnerabilityTemplateViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     errors.append({'row': row_num, 'error': str(e)})
             
-            return response.Response({
+            return Response({
                 'created': len(created),
                 'errors': errors,
                 'items': created
             }, status=status.HTTP_201_CREATED if created else status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
-            return response.Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Failed to parse CSV: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 class GeneratedReportViewSet(viewsets.ModelViewSet):
     queryset = GeneratedReport.objects.all()
@@ -994,7 +1069,7 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
         
         report = self.get_object()
         if not report.file:
-             return response.Response({'error': 'Report file not found'}, status=status.HTTP_404_NOT_FOUND)
+             return Response({'error': 'Report file not found'}, status=status.HTTP_404_NOT_FOUND)
         
         file_handle = report.file.open()
         
@@ -1060,7 +1135,7 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
             # Generate asynchronously? For now, synchronously.
             generator.generate_report(template, context, output_format, report_instance)
             
-            return response.Response(
+            return Response(
                 GeneratedReportSerializer(report_instance).data,
                 status=status.HTTP_201_CREATED
             )
@@ -1068,7 +1143,7 @@ class GeneratedReportViewSet(viewsets.ModelViewSet):
         except Exception as e:
             # Error handling is done inside generate_report for modifying the instance,
             # but we also catch here to return response if it bubbles up or if setup failed.
-            return response.Response(
+            return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

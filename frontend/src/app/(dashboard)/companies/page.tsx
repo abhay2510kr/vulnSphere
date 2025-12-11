@@ -50,8 +50,12 @@ export default function CompaniesPage() {
             setLoading(true);
             const res = await api.get('/companies/');
             const companyData = res.data.results || res.data;
-            setCompanies(companyData);
-            setFilteredCompanies(companyData);
+            
+            // Filter inactive companies for non-admin users
+            const filteredData = isAdmin ? companyData : companyData.filter((company: Company) => company.is_active);
+            
+            setCompanies(filteredData);
+            setFilteredCompanies(filteredData);
         } catch (err: any) {
             console.error("Failed to fetch companies", err);
             setError('Failed to load companies');
@@ -172,8 +176,7 @@ export default function CompaniesPage() {
                 </div>
             ) : (
                 <>
-                    <div className="rounded-md border">
-                        <Table>
+                    <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Name</TableHead>
@@ -234,7 +237,6 @@ export default function CompaniesPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                    </div>
                     <TablePagination
                         currentPage={currentPage}
                         totalItems={filteredCompanies.length}

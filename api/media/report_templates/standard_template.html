@@ -568,6 +568,22 @@
             page-break-before: always;
         }
 
+        /* Dynamic Severity Colors */
+        .severity-critical { color: var(--severity-critical); }
+        .severity-high { color: var(--severity-high); }
+        .severity-medium { color: var(--severity-medium); }
+        .severity-low { color: var(--severity-low); }
+        .severity-info { color: var(--severity-info); }
+        
+        /* Dynamic Status Colors */
+        .status-open { color: var(--status-open); }
+        .status-in-progress { color: var(--status-in-progress); }
+        .status-resolved { color: var(--status-resolved); }
+        .status-accepted-risk { color: var(--status-accepted-risk); }
+        .status-false-positive { color: var(--status-false-positive); }
+        .status-retest-pending { color: var(--status-retest-pending); }
+        .status-retest-failed { color: var(--status-retest-failed); }
+
         /* Print Styles */
         @media print {
             html {
@@ -820,11 +836,9 @@
                     <tr class="clickable-row">
                         <td>{{ "%03d" | format(loop.index) }}</td>
                         <td><a href="#vuln-{{ " %03d" | format(loop.index) }}">{{vuln.title}}</a></td>
-                        <td><b class="badge-text"
-                                style="color: var(--severity-{{vuln.severity | lower}});">{{vuln.severity_display}}</b>
+                        <td><b class="badge-text severity-{{vuln.severity | lower}}">{{vuln.severity_display}}</b>
                         </td>
-                        <td><b class="badge-text"
-                                style="color: var(--status-{{vuln.status_code | lower | replace('_', '-')}});">{{vuln.status}}</b>
+                        <td><b class="badge-text status-{{vuln.status_code | lower | replace('_', '-')}}">{{vuln.status}}</b>
                         </td>
                     </tr>
                     {% endfor %}
@@ -841,14 +855,11 @@
             {% endif %}
             <div class="finding" id="vuln-{{ " %03d" | format(loop.index) }}">
                 <div class="finding-header">
-                    <h2 class="finding-title">[<span class="vuln-id"
-                            style="color: var(--severity-{{vuln.severity | lower}})">{{ "%03d" | format(loop.index)
+                    <h2 class="finding-title">[<span class="vuln-id severity-{{vuln.severity | lower}}">{{ "%03d" | format(loop.index)
                             }}</span>] {{vuln.title}}</h2>
                     <div class="finding-meta">
-                        <span>Severity: <b class="badge-text"
-                                style="color: var(--severity-{{vuln.severity | lower}})">{{vuln.severity_display}}</b></span>
-                        <span>Status: <b class="badge-text"
-                                style="color: var(--status-{{vuln.status_code | lower | replace('_', '-')}})">{{vuln.status}}</b></span>
+                        <span>Severity: <b class="badge-text severity-{{vuln.severity | lower}}">{{vuln.severity_display}}</b></span>
+                        <span>Status: <b class="badge-text status-{{vuln.status_code | lower | replace('_', '-')}}">{{vuln.status}}</b></span>
                         <span>Cvss: <b>{{vuln.cvss_base_score}}</b></span>
                     </div>
                 </div>

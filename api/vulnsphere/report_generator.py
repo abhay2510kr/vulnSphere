@@ -172,62 +172,44 @@ class ReportGenerator:
             # Read the template file
             template_content = template.file.read().decode('utf-8')
             
-            # Create secure Jinja2 environment
-            from jinja2.sandbox import SandboxedEnvironment
-            from jinja2 import TemplateSyntaxError
+            # Create Jinja2 environment with relaxed security for report generation
+            from jinja2 import Environment, TemplateSyntaxError
             
-            env = SandboxedEnvironment(
+            env = Environment(
                 autoescape=True,
-                line_statement_prefix=False,
-                line_comment_prefix=False,
+                line_statement_prefix=None,
+                line_comment_prefix=None,
                 trim_blocks=True,
                 lstrip_blocks=True
             )
             
-            # Custom security functions
-            def is_safe_attribute(obj, attr, value):
-                """Strict attribute access control"""
-                # Allow only basic attributes on primitive types
-                if obj is None:
-                    return False
-                
-                # Allow basic string methods
-                if isinstance(obj, str):
-                    safe_attrs = {'upper', 'lower', 'title', 'strip', 'replace', 'split', 'join', 'format', 'startswith', 'endswith', 'count', 'find', 'rfind'}
-                    return attr in safe_attrs
-                
-                # Allow basic list methods
-                if isinstance(obj, (list, tuple)):
-                    safe_attrs = {'len', 'count', 'index', 'sort'}
-                    return attr in safe_attrs
-                
-                # Allow basic dict methods
-                if isinstance(obj, dict):
-                    safe_attrs = {'keys', 'values', 'items', 'get'}
-                    return attr in safe_attrs
-                
-                # Allow basic number methods
-                if isinstance(obj, (int, float)):
-                    safe_attrs = {'__str__', '__repr__'}
-                    return attr in safe_attrs
-                
-                return False
+            # Add custom filter for safe formatting
+            def safe_format(value, pattern):
+                """Safe string formatting that handles various types"""
+                try:
+                    if isinstance(value, (int, float)):
+                        return pattern % value
+                    elif isinstance(value, str):
+                        return pattern % value
+                    else:
+                        return pattern % str(value)
+                except (TypeError, ValueError):
+                    return str(pattern) % str(value)
             
-            def is_safe_callable(obj):
-                """Strict callable access control"""
-                # Only allow built-in safe functions
-                safe_callables = {
-                    str.upper, str.lower, str.title, str.strip, str.replace, 
-                    str.split, str.join, str.format, str.startswith, str.endswith,
-                    len, str, int, float, bool
-                }
-                return obj in safe_callables
+            # Add markdown filter
+            def markdown_filter(text):
+                """Convert markdown to HTML"""
+                try:
+                    import markdown
+                    return markdown.markdown(text, extensions=['fenced_code', 'codehilite', 'tables'])
+                except ImportError:
+                    return text
             
-            # Apply security policies
-            env.is_safe_attribute = is_safe_attribute
-            env.is_safe_callable = is_safe_callable
+            # Register custom filters
+            env.filters['safe_format'] = safe_format
+            env.filters['markdown'] = markdown_filter
             
-            # Create template from string (no filesystem loader)
+            # Create template from string
             jinja_template = env.from_string(template_content)
             
             # Sanitize context to only include primitive data structures
@@ -279,16 +261,16 @@ class ReportGenerator:
         # Calculate risk counts
         counts = Counter(v.severity for v in vulnerabilities)
         risk_counts = {
-            'critical': counts['CRITICAL'],
-            'high': counts['HIGH'],
-            'med': counts['MEDIUM'],
-            'low': counts['LOW'],
-            'info': counts['INFO'],
-            'total': len(vulnerabilities)
+            'critical': int(counts.get('CRITICAL', 0)),
+            'high': int(counts.get('HIGH', 0)),
+            'med': int(counts.get('MEDIUM', 0)),
+            'low': int(counts.get('LOW', 0)),
+            'info': int(counts.get('INFO', 0)),
+            'total': int(len(vulnerabilities))
         }
         
         assets = project.assets.all()
-        assets_list = [{'name': a.name, 'type': a.get_type_display(), 'url': a.identifier} for a in assets]
+        assets_list = [{'name': a.name, 'type': a.get_type_display(), 'url': a.identifier, 'is_active': bool(a.is_active)} for a in assets]
         
         context = {
             'project': {
@@ -303,6 +285,13 @@ class ReportGenerator:
                 'status': project.get_status_display(),
             },
             'risk_counts': risk_counts,
+            'risk_types': [
+                {'severity': 'critical', 'label': 'Critical', 'count': risk_counts['critical']},
+                {'severity': 'high', 'label': 'High', 'count': risk_counts['high']},
+                {'severity': 'medium', 'label': 'Medium', 'count': risk_counts['med']},
+                {'severity': 'low', 'label': 'Low', 'count': risk_counts['low']},
+                {'severity': 'info', 'label': 'Info', 'count': risk_counts['info']}
+            ],
             'assets': assets_list,
             'vulnerabilities': []
         }

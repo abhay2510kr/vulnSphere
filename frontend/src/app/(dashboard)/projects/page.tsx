@@ -65,8 +65,11 @@ export default function ProjectsPage() {
         try {
             // Fetch companies
             const companiesRes = await api.get('/companies/');
-            const companiesData = companiesRes.data;
-            setCompanies(companiesData.results || companiesData);
+            const companiesResponse = companiesRes.data.results || companiesRes.data;
+            
+            // Filter inactive companies for non-admin users
+            const filteredCompanies = isAdmin ? companiesResponse : companiesResponse.filter((company: any) => company.is_active);
+            setCompanies(filteredCompanies);
 
             // Build query params
             const params = new URLSearchParams({ page: page.toString(), page_size: '12' });
@@ -77,6 +80,11 @@ export default function ProjectsPage() {
             const projectsData = projectsRes.data;
 
             let filteredProjects = projectsData.results || projectsData;
+            
+            // Filter projects to only show those from visible companies
+            filteredProjects = filteredProjects.filter((p: Project) => 
+                filteredCompanies.some((company: Company) => company.id === p.company)
+            );
 
             // Client-side filtering for company and status
             if (selectedCompany !== 'all') {
@@ -199,8 +207,7 @@ export default function ProjectsPage() {
                 </Select>
             </div>
 
-            <div className="rounded-md border">
-                <Table>
+            <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Title</TableHead>
@@ -261,7 +268,6 @@ export default function ProjectsPage() {
                         )}
                     </TableBody>
                 </Table>
-            </div>
 
             <TablePagination
                 currentPage={page}

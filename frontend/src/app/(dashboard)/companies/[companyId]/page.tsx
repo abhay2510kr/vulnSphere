@@ -21,6 +21,8 @@ import { CSVImportDialog } from '@/components/ui/csv-import-dialog';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/use-auth';
 import { formatStatus, formatAssetType } from '@/lib/formatters';
 
@@ -102,7 +104,15 @@ export default function CompanyDetailPage() {
                 api.get(`/companies/${companyId}/assets/`),
             ]);
 
-            setCompany(companyRes.data);
+            const companyData = companyRes.data;
+            
+            // Check if user is admin and if company is inactive
+            if (!isAdmin && !companyData.is_active) {
+                setError('Company not found');
+                return;
+            }
+
+            setCompany(companyData);
             const projectsData = projectsRes.data.results || projectsRes.data;
             
             // Fetch vulnerability counts for each project
@@ -314,10 +324,28 @@ export default function CompanyDetailPage() {
                     </div>
                     <div>
                         <span className="text-sm font-medium">Status:</span>
-                        <Badge variant={company.is_active ? 'outline' : 'secondary'} className="ml-2">
-                            {company.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
+                        {isEditing ? (
+                            <div className="flex items-center space-x-2 mt-1">
+                                <Switch
+                                    id="edit-is-active"
+                                    checked={editFormData.is_active || false}
+                                    onCheckedChange={(checked: boolean) => setEditFormData({ ...editFormData, is_active: checked })}
+                                />
+                                <Label htmlFor="edit-is-active">
+                                    {editFormData.is_active ? 'Active' : 'Inactive'}
+                                </Label>
+                            </div>
+                        ) : (
+                            <Badge variant={company.is_active ? 'outline' : 'secondary'} className="ml-2">
+                                {company.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                        )}
                     </div>
+                    {isEditing && (
+                        <p className="text-sm text-muted-foreground">
+                            Inactive companies will be hidden from clients and testers.
+                        </p>
+                    )}
                 </CardContent>
             </Card>
 
@@ -348,8 +376,7 @@ export default function CompanyDetailPage() {
                         </Card>
                     ) : (
                         <>
-                            <div className="rounded-md border">
-                                <Table>
+                            <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Title</TableHead>
@@ -398,7 +425,6 @@ export default function CompanyDetailPage() {
                                         ))}
                                     </TableBody>
                                 </Table>
-                            </div>
                             <TablePagination
                                 currentPage={projectPage}
                                 totalItems={projects.length}
@@ -436,8 +462,7 @@ export default function CompanyDetailPage() {
                         </Card>
                     ) : (
                         <>
-                            <div className="rounded-md border">
-                                <Table>
+                            <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Name</TableHead>
@@ -482,7 +507,6 @@ export default function CompanyDetailPage() {
                                         ))}
                                     </TableBody>
                                 </Table>
-                            </div>
                             <TablePagination
                                 currentPage={assetPage}
                                 totalItems={assets.length}

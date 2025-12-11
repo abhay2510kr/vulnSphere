@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import api from '@/lib/api';
 
 interface Company {
@@ -23,6 +24,7 @@ interface Company {
     contact_email: string;
     address: string;
     notes: string;
+    is_active: boolean;
 }
 
 interface CompanyEditDialogProps {
@@ -41,6 +43,7 @@ export function CompanyEditDialog({ company, open, onOpenChange, onSuccess }: Co
         contact_email: '',
         address: '',
         notes: '',
+        is_active: true,
     });
 
     useEffect(() => {
@@ -51,6 +54,7 @@ export function CompanyEditDialog({ company, open, onOpenChange, onSuccess }: Co
                 contact_email: company.contact_email,
                 address: company.address || '',
                 notes: company.notes || '',
+                is_active: company.is_active,
             });
         }
     }, [company]);
@@ -146,6 +150,17 @@ export function CompanyEditDialog({ company, open, onOpenChange, onSuccess }: Co
                                 rows={3}
                             />
                         </div>
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id="edit-is-active"
+                                checked={formData.is_active}
+                                onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_active: checked })}
+                            />
+                            <Label htmlFor="edit-is-active">Active Company</Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Inactive companies will be hidden from clients and testers.
+                        </p>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
