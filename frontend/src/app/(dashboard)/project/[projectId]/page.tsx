@@ -251,6 +251,16 @@ export default function ProjectDetailPage() {
         }
     };
 
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'DRAFT': return 'secondary';
+            case 'IN_REVIEW': return 'default';
+            case 'FINAL': return 'outline';
+            case 'ARCHIVED': return 'outline';
+            default: return 'secondary';
+        }
+    };
+
     const handleSaveProject = async () => {
         if (!project) return;
         setSaving(true);
@@ -320,50 +330,25 @@ export default function ProjectDetailPage() {
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
-                        {isEditing ? (
-                            <Input
-                                value={editFormData.title || ''}
-                                onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
-                                className="text-2xl font-bold h-10 w-full"
-                            />
-                        ) : (
-                            <h1 className="text-3xl font-bold tracking-tight">{project.title}</h1>
-                        )}
-                        {isEditing ? (
-                            <Input
-                                value={editFormData.engagement_type || ''}
-                                onChange={(e) => setEditFormData({ ...editFormData, engagement_type: e.target.value })}
-                                className="mt-1 h-8 w-full"
-                                placeholder="Engagement Type"
-                            />
-                        ) : (
+                        <h1 className="text-3xl font-bold tracking-tight">{project.title}</h1>
+                        <div className="flex items-center gap-2 mt-1">
                             <p className="text-muted-foreground">{project.engagement_type}</p>
-                        )}
+                            <Badge variant={getStatusColor(project.status)}>
+                                {project.status.replace('_', ' ')}
+                            </Badge>
+                        </div>
                     </div>
                 </div>
-                {isEditing ? (
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
-                            <X className="mr-2 h-4 w-4" />
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveProject} disabled={saving}>
-                            <Save className="mr-2 h-4 w-4" />
-                            {saving ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={toggleEdit}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit Project
-                        </Button>
-                        <Button onClick={() => setReportDialogOpen(true)}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            Create Report
-                        </Button>
-                    </div>
-                )}
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={toggleEdit}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit Project
+                    </Button>
+                    <Button onClick={() => setReportDialogOpen(true)}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Create Report
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -371,34 +356,86 @@ export default function ProjectDetailPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle>Project Details</CardTitle>
-                            <CardDescription>
-                                {isEditing ? (
-                                    <div className="flex gap-2 mt-2">
-                                        <Input
-                                            type="date"
-                                            value={editFormData.start_date || ''}
-                                            onChange={(e) => setEditFormData({ ...editFormData, start_date: e.target.value })}
-                                        />
-                                        <span className="self-center">-</span>
-                                        <Input
-                                            type="date"
-                                            value={editFormData.end_date || ''}
-                                            onChange={(e) => setEditFormData({ ...editFormData, end_date: e.target.value })}
-                                        />
-                                    </div>
-                                ) : (
-                                    <span>
-                                        {new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}
-                                    </span>
-                                )}
-                            </CardDescription>
                         </div>
-                        {isEditing ? (
+                        {isEditing && (
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSaveProject} disabled={saving}>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    {saving ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="edit-title">Project Title *</Label>
+                            {isEditing ? (
+                                <Input
+                                    id="edit-title"
+                                    value={editFormData.title || ''}
+                                    onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                                    placeholder="Project Title"
+                                />
+                            ) : (
+                                <p className="text-sm font-medium mt-1">{project.title}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label htmlFor="edit-engagement-type">Engagement Type *</Label>
+                            {isEditing ? (
+                                <Input
+                                    id="edit-engagement-type"
+                                    value={editFormData.engagement_type || ''}
+                                    onChange={(e) => setEditFormData({ ...editFormData, engagement_type: e.target.value })}
+                                    placeholder="Engagement Type"
+                                />
+                            ) : (
+                                <p className="text-sm font-medium mt-1">{project.engagement_type}</p>
+                            )}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="edit-start-date">Start Date *</Label>
+                            {isEditing ? (
+                                <Input
+                                    id="edit-start-date"
+                                    type="date"
+                                    value={editFormData.start_date || ''}
+                                    onChange={(e) => setEditFormData({ ...editFormData, start_date: e.target.value })}
+                                />
+                            ) : (
+                                <p className="text-sm font-medium mt-1">{new Date(project.start_date).toLocaleDateString()}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label htmlFor="edit-end-date">End Date *</Label>
+                            {isEditing ? (
+                                <Input
+                                    id="edit-end-date"
+                                    type="date"
+                                    value={editFormData.end_date || ''}
+                                    onChange={(e) => setEditFormData({ ...editFormData, end_date: e.target.value })}
+                                />
+                            ) : (
+                                <p className="text-sm font-medium mt-1">{new Date(project.end_date).toLocaleDateString()}</p>
+                            )}
+                        </div>
+                    </div>
+                    {isEditing && (
+                        <div className="space-y-2">
+                            <Label>Status</Label>
                             <Select
                                 value={editFormData.status || project.status}
                                 onValueChange={(v) => setEditFormData({ ...editFormData, status: v })}
                             >
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -408,29 +445,24 @@ export default function ProjectDetailPage() {
                                     <SelectItem value="ARCHIVED">Archived</SelectItem>
                                 </SelectContent>
                             </Select>
-                        ) : (
-                            <Badge variant="outline">
-                                {project.status.replace('_', ' ')}
-                            </Badge>
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {isEditing ? (
-                        <div className="space-y-2">
-                            <Label>Summary</Label>
+                        </div>
+                    )}
+                    <div>
+                        <Label>Summary</Label>
+                        {isEditing ? (
                             <MDXEditorComponent
                                 value={editFormData.summary || ''}
                                 onChange={(v) => setEditFormData({ ...editFormData, summary: v })}
+                                height={200}
                             />
-                        </div>
-                    ) : (
-                        project.summary && (
-                            <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <ReactMarkdown>{project.summary}</ReactMarkdown>
-                            </div>
-                        )
-                    )}
+                        ) : (
+                            project.summary && (
+                                <div className="prose prose-sm dark:prose-invert max-w-none mt-2">
+                                    <ReactMarkdown>{project.summary}</ReactMarkdown>
+                                </div>
+                            )
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 

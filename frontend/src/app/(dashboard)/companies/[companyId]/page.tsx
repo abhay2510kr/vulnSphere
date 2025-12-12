@@ -250,81 +250,102 @@ export default function CompanyDetailPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex-1 mr-4">
-                    {isEditing ? (
-                        <div className="space-y-2">
-                            <Input
-                                value={editFormData.name || ''}
-                                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                                className="text-3xl font-bold h-12 w-full"
-                                placeholder="Company Name"
-                            />
-                            <Input
-                                value={editFormData.contact_email || ''}
-                                onChange={(e) => setEditFormData({ ...editFormData, contact_email: e.target.value })}
-                                className="w-full max-w-md"
-                                placeholder="Contact Email"
-                            />
-                        </div>
-                    ) : (
-                        <>
-                            <h1 className="text-3xl font-bold tracking-tight">{company.name}</h1>
-                            <p className="text-muted-foreground">{company.contact_email}</p>
-                        </>
-                    )}
-                </div>
-                {isEditing ? (
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
-                            <X className="mr-2 h-4 w-4" />
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveCompany} disabled={saving}>
-                            <Save className="mr-2 h-4 w-4" />
-                            {saving ? 'Saving...' : 'Save Changes'}
-                        </Button>
+                    <h1 className="text-3xl font-bold tracking-tight">{company.name}</h1>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-muted-foreground">{company.contact_email}</p>
+                        <Badge variant={company.is_active ? 'outline' : 'secondary'}>
+                            {company.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
                     </div>
-                ) : (
-                    !isEditing && canEdit && (
-                        <Button variant="outline" onClick={toggleEdit}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit Company
-                        </Button>
-                    )
+                </div>
+                {!isEditing && canEdit && (
+                    <Button variant="outline" onClick={toggleEdit}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit Company
+                    </Button>
                 )}
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Company Information</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                    <div>
-                        <span className="text-sm font-medium">Address:</span>
-                        {isEditing ? (
-                            <Textarea
-                                value={editFormData.address || ''}
-                                onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                                placeholder="Address"
-                            />
-                        ) : (
-                            <p className="text-sm text-muted-foreground">{company.address || 'N/A'}</p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Company Information</CardTitle>
+                        </div>
+                        {isEditing && (
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSaveCompany} disabled={saving}>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    {saving ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                            </div>
                         )}
                     </div>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <Label htmlFor="edit-name">Company Name *</Label>
+                            {isEditing ? (
+                                <Input
+                                    id="edit-name"
+                                    value={editFormData.name || ''}
+                                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                                    placeholder="Company Name"
+                                />
+                            ) : (
+                                <p className="text-sm font-medium mt-1">{company.name}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label htmlFor="edit-contact-email">Contact Email *</Label>
+                            {isEditing ? (
+                                <Input
+                                    id="edit-contact-email"
+                                    type="email"
+                                    value={editFormData.contact_email || ''}
+                                    onChange={(e) => setEditFormData({ ...editFormData, contact_email: e.target.value })}
+                                    placeholder="Contact Email"
+                                />
+                            ) : (
+                                <p className="text-sm font-medium mt-1">{company.contact_email}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label htmlFor="edit-address">Address</Label>
+                            {isEditing ? (
+                                <Input
+                                    id="edit-address"
+                                    value={editFormData.address || ''}
+                                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                                    placeholder="Address"
+                                />
+                            ) : (
+                                <p className="text-sm font-medium mt-1">{company.address || 'N/A'}</p>
+                            )}
+                        </div>
+                    </div>
                     <div>
-                        <span className="text-sm font-medium">Notes:</span>
+                        <Label htmlFor="edit-notes">Notes</Label>
                         {isEditing ? (
                             <Textarea
+                                id="edit-notes"
                                 value={editFormData.notes || ''}
                                 onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
                                 placeholder="Internal Notes"
+                                rows={3}
                             />
                         ) : (
-                            <p className="text-sm text-muted-foreground">{company.notes || 'N/A'}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{company.notes || 'N/A'}</p>
                         )}
                     </div>
-                    <div>
-                        <span className="text-sm font-medium">Status:</span>
-                        {isEditing ? (
+                    {isEditing && (
+                        <div className="space-y-2">
+                            <Label>Status</Label>
                             <div className="flex items-center space-x-2 mt-1">
                                 <Switch
                                     id="edit-is-active"
@@ -335,16 +356,10 @@ export default function CompanyDetailPage() {
                                     {editFormData.is_active ? 'Active' : 'Inactive'}
                                 </Label>
                             </div>
-                        ) : (
-                            <Badge variant={company.is_active ? 'outline' : 'secondary'} className="ml-2">
-                                {company.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                        )}
-                    </div>
-                    {isEditing && (
-                        <p className="text-sm text-muted-foreground">
-                            Inactive companies will be hidden from clients and testers.
-                        </p>
+                            <p className="text-sm text-muted-foreground">
+                                Inactive companies will be hidden from clients and testers.
+                            </p>
+                        </div>
                     )}
                 </CardContent>
             </Card>
