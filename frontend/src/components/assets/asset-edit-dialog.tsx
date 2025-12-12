@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import api from '@/lib/api';
 
@@ -24,6 +25,7 @@ interface Asset {
     type: string;
     identifier: string;
     description: string;
+    is_active: boolean;
 }
 
 interface AssetEditDialogProps {
@@ -41,6 +43,7 @@ export function AssetEditDialog({ asset, open, onOpenChange, onSuccess }: AssetE
         type: 'WEB_APP',
         identifier: '',
         description: '',
+        is_active: true,
     });
 
     useEffect(() => {
@@ -50,6 +53,7 @@ export function AssetEditDialog({ asset, open, onOpenChange, onSuccess }: AssetE
                 type: asset.type,
                 identifier: asset.identifier,
                 description: asset.description || '',
+                is_active: asset.is_active,
             });
         }
     }, [asset]);
@@ -134,6 +138,22 @@ export function AssetEditDialog({ asset, open, onOpenChange, onSuccess }: AssetE
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 rows={3}
                             />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Status</Label>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="edit-is-active"
+                                    checked={formData.is_active}
+                                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_active: checked })}
+                                />
+                                <Label htmlFor="edit-is-active">
+                                    {formData.is_active ? 'Active' : 'Inactive'}
+                                </Label>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Inactive assets will be hidden from vulnerability scans and reports.
+                            </p>
                         </div>
                     </div>
                     <DialogFooter>

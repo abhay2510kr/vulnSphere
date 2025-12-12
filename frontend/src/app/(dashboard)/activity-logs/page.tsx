@@ -50,7 +50,7 @@ export default function ActivityLogsPage() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
-    const pageSize = 12;
+    const ITEMS_PER_PAGE = 15;
 
     useEffect(() => {
         const fetchLogs = async () => {
@@ -59,12 +59,12 @@ export default function ActivityLogsPage() {
                 const res = await api.get<PaginatedResponse>('/activity-logs/', {
                     params: {
                         page,
-                        page_size: pageSize,
+                        page_size: ITEMS_PER_PAGE,
                     }
                 });
                 setLogs(res.data.results);
                 setTotalCount(res.data.count);
-                setTotalPages(Math.ceil(res.data.count / pageSize));
+                setTotalPages(Math.ceil(res.data.count / ITEMS_PER_PAGE));
             } catch (err: any) {
                 console.error("Failed to fetch activity logs", err);
                 if (err.response?.status === 403) {
@@ -135,7 +135,7 @@ export default function ActivityLogsPage() {
         return (
             <div className="flex items-center justify-between mt-6">
                 <div className="text-sm text-muted-foreground">
-                    Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to <span className="font-medium">{Math.min(page * pageSize, totalCount)}</span> of <span className="font-medium">{totalCount}</span> entries
+                    Showing <span className="font-medium">{(page - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium">{Math.min(page * ITEMS_PER_PAGE, totalCount)}</span> of <span className="font-medium">{totalCount}</span> entries
                 </div>
                 <div className="flex items-center gap-2">
                     <Button

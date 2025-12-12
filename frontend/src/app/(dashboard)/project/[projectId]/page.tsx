@@ -13,6 +13,7 @@ import { TablePagination } from '@/components/ui/table-pagination';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, EnhancedSelect } from '@/components/ui/select';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
+import { AssetStatusBadge } from '@/components/assets/asset-status-badge';
 import { VulnerabilityDeleteDialog } from '@/components/vulnerabilities/vulnerability-delete-dialog';
 import { VulnerabilityCloneDialog } from '@/components/vulnerabilities/vulnerability-clone-dialog';
 import { ArrowLeft, Plus, Pencil, Trash2, Copy, Shield, Search, Eye, Save, X, FileText, Minus, AlertCircle, Clock, CheckCircle, AlertTriangle, XCircle, RotateCcw } from 'lucide-react';
@@ -34,7 +35,7 @@ import { SeverityBadge } from '@/components/vulnerabilities/severity-badge';
 import { StatusBadge } from '@/components/vulnerabilities/status-badge';
 import { useAuth } from '@/hooks/use-auth';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 15;
 
 interface ReportTemplate {
     id: string;
@@ -77,7 +78,7 @@ export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
     const projectId = params.projectId as string;
-    const { canEdit } = useAuth();
+    const { canEdit, isClient } = useAuth();
 
     const [project, setProject] = useState<Project | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -102,6 +103,7 @@ export default function ProjectDetailPage() {
     // Asset state
     const [assetSearchQuery, setAssetSearchQuery] = useState('');
     const [assetFilter, setAssetFilter] = useState('ALL');
+    const [assetStatusFilter, setAssetStatusFilter] = useState('all');
     const [assetPage, setAssetPage] = useState(1);
 
     // Tab state
@@ -204,6 +206,18 @@ export default function ProjectDetailPage() {
         const matchesSearch = asset.name.toLowerCase().includes(assetSearchQuery.toLowerCase());
         const isAttached = assetIds.has(asset.id);
 
+        // Status filter
+        if (assetStatusFilter !== 'all') {
+            const isActive = assetStatusFilter === 'active';
+            if (asset.is_active !== isActive) return false;
+        }
+
+        // For clients, only show attached assets
+        if (isClient) {
+            return isAttached && matchesSearch;
+        }
+
+        // For non-clients, use the attachment filter
         if (assetFilter === 'ATTACHED') return isAttached && matchesSearch;
         if (assetFilter === 'UNATTACHED') return !isAttached && matchesSearch;
         return matchesSearch; // ALL
@@ -339,14 +353,18 @@ export default function ProjectDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={toggleEdit}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit Project
-                    </Button>
-                    <Button onClick={() => setReportDialogOpen(true)}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Generate Report
-                    </Button>
+                    {!isClient && (
+                        <Button variant="outline" onClick={toggleEdit}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit Project
+                        </Button>
+                    )}
+                    {!isClient && (
+                        <Button onClick={() => setReportDialogOpen(true)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Generate Report
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -478,10 +496,12 @@ export default function ProjectDetailPage() {
                 <TabsContent value="vulnerabilities" className="space-y-4">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold">Vulnerabilities</h2>
-                        <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Vulnerability
-                        </Button>
+                        {!isClient && (
+                            <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Vulnerability
+                            </Button>
+                        )}
                     </div>
 
                     <div className="space-y-4">
@@ -538,7 +558,7 @@ export default function ProjectDetailPage() {
                                         ? 'No vulnerabilities match your filters.'
                                         : 'Add your first vulnerability to get started'}
                                 </p>
-                                {!(vulnSearchQuery || vulnSeverityFilter !== 'ALL' || vulnStatusFilter !== 'ALL') && (
+                                {!(vulnSearchQuery || vulnSeverityFilter !== 'ALL' || vulnStatusFilter !== 'ALL') && !isClient && (
                                     <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/new`)}>
                                         <Plus className="mr-2 h-4 w-4" />
                                         Add Vulnerability
@@ -554,7 +574,7 @@ export default function ProjectDetailPage() {
                                                 <TableHead>Severity</TableHead>
                                                 <TableHead>Status</TableHead>
                                                 <TableHead>CVSS</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
+                                                {!isClient && <TableHead className="text-right">Actions</TableHead>}
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -572,36 +592,35 @@ export default function ProjectDetailPage() {
                                                         <StatusBadge status={vuln.status} />
                                                     </TableCell>
                                                     <TableCell>{vuln.cvss_base_score ? Number(vuln.cvss_base_score).toFixed(1) : 'N/A'}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div
-                                                            className="flex justify-end gap-2"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <Button variant="ghost" size="sm">
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    setSelectedVuln(vuln);
-                                                                    setCloneDialogOpen(true);
-                                                                }}
+                                                    {!isClient && (
+                                                        <TableCell className="text-right">
+                                                            <div
+                                                                className="flex justify-end gap-2"
+                                                                onClick={(e) => e.stopPropagation()}
                                                             >
-                                                                <Copy className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    setSelectedVuln(vuln);
-                                                                    setDeleteDialogOpen(true);
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        setSelectedVuln(vuln);
+                                                                        setCloneDialogOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <Copy className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        setSelectedVuln(vuln);
+                                                                        setDeleteDialogOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    )}
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -637,6 +656,7 @@ export default function ProjectDetailPage() {
                                     className="pl-8"
                                 />
                             </div>
+                            {!isClient && (
                             <Select value={assetFilter} onValueChange={setAssetFilter}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue />
@@ -647,6 +667,21 @@ export default function ProjectDetailPage() {
                                     <SelectItem value="UNATTACHED">Not Attached</SelectItem>
                                 </SelectContent>
                             </Select>
+                        )}
+                            <EnhancedSelect value={assetStatusFilter} onValueChange={(value: string) => {
+                                setAssetStatusFilter(value);
+                                setAssetPage(1);
+                            }} colorType="assetStatus">
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="All Statuses" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Statuses</SelectItem>
+                                    <SelectItem value="active" color="#22c55e">Active</SelectItem>
+                                    <SelectItem value="inactive" color="#ef4444">Inactive</SelectItem>
+                                </SelectContent>
+                            </EnhancedSelect>
+                            {!isClient && (
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"
@@ -667,6 +702,7 @@ export default function ProjectDetailPage() {
                                     Detach All
                                 </Button>
                             </div>
+                        )}
                         </div>
 
                         {filteredAssets.length === 0 ? (
@@ -682,8 +718,8 @@ export default function ProjectDetailPage() {
                                                 <TableHead>Name</TableHead>
                                                 <TableHead>Type</TableHead>
                                                 <TableHead>Identifier</TableHead>
-                                                <TableHead>Environment</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                {!isClient && <TableHead className="text-right">Actions</TableHead>}
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -698,25 +734,29 @@ export default function ProjectDetailPage() {
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell>{asset.identifier}</TableCell>
-                                                        <TableCell>{asset.environment}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            {isAttached ? (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => handleDetachAsset(asset.id)}
-                                                                >
-                                                                    Detach
-                                                                </Button>
-                                                            ) : (
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => handleAttachAsset(asset.id)}
-                                                                >
-                                                                    Attach
-                                                                </Button>
-                                                            )}
+                                                        <TableCell>
+                                                            <AssetStatusBadge status={asset.is_active} />
                                                         </TableCell>
+                                                        {!isClient && (
+                                                            <TableCell className="text-right">
+                                                                {isAttached ? (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => handleDetachAsset(asset.id)}
+                                                                    >
+                                                                        Detach
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleAttachAsset(asset.id)}
+                                                                    >
+                                                                        Attach
+                                                                    </Button>
+                                                                )}
+                                                            </TableCell>
+                                                        )}
                                                     </TableRow>
                                                 );
                                             })}

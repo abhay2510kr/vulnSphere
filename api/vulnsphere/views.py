@@ -20,14 +20,25 @@ from .permissions import IsAdmin, IsAdminOrTester, IsTesterOrAdmin, CanRequestRe
 from rest_framework.pagination import PageNumberPagination
 
 class StandardPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 15  # Default fallback
     page_size_query_param = 'page_size'
     max_page_size = 100
+    
+    def get_page_size(self, request):
+        if hasattr(request, 'query_params') and 'page_size' in request.query_params:
+            try:
+                page_size = int(request.query_params.get('page_size', self.page_size))
+                if page_size > 0 and page_size <= self.max_page_size:
+                    return page_size
+            except (ValueError, TypeError):
+                pass
+        return self.page_size
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
+    pagination_class = StandardPagination
 
     @decorators.action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
@@ -41,6 +52,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     """
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
+    pagination_class = StandardPagination
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:

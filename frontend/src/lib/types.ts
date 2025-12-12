@@ -69,3 +69,20 @@ export interface Comment {
     created_at: string;
     updated_at: string;
 }
+
+export interface Vulnerability {
+    id: string;
+    title: string;
+    severity: string;
+    status: string;
+    cvss_base_score: number | null;
+    cvss_vector: string;
+    details_md: string;
+    references: string[];
+    created_at: string;
+    updated_at: string;
+    category?: string;
+    cve_id?: string;
+    affected_asset?: string;
+    recommendation?: string;
+}

@@ -28,7 +28,7 @@ export default function ReportsPage() {
     // Pagination state
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
-    const pageSize = 12;
+    const ITEMS_PER_PAGE = 15;
 
     // Redirect clients away from this page
     useEffect(() => {
@@ -42,7 +42,7 @@ export default function ReportsPage() {
         try {
             const params: Record<string, any> = {
                 page,
-                page_size: pageSize,
+                page_size: ITEMS_PER_PAGE,
             };
 
             if (searchTerm) {
@@ -182,7 +182,7 @@ export default function ReportsPage() {
             <TablePagination
                 currentPage={page}
                 totalItems={totalCount}
-                itemsPerPage={pageSize}
+                itemsPerPage={ITEMS_PER_PAGE}
                 onPageChange={setPage}
             />
 

@@ -19,6 +19,8 @@ import { Search, Eye, Pencil, Trash2, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { formatStatus } from '@/lib/formatters';
 
+const ITEMS_PER_PAGE = 15;
+
 interface Company {
     id: string;
     name: string;
@@ -72,7 +74,7 @@ export default function ProjectsPage() {
             setCompanies(filteredCompanies);
 
             // Build query params
-            const params = new URLSearchParams({ page: page.toString(), page_size: '12' });
+            const params = new URLSearchParams({ page: page.toString(), page_size: ITEMS_PER_PAGE.toString() });
             if (search) params.append('search', search);
 
             // Fetch projects
@@ -272,7 +274,7 @@ export default function ProjectsPage() {
             <TablePagination
                 currentPage={page}
                 totalItems={totalCount}
-                itemsPerPage={12}
+                itemsPerPage={ITEMS_PER_PAGE}
                 onPageChange={setPage}
             />
 

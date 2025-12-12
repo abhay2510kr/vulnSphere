@@ -15,7 +15,7 @@ import { UserEditDialog } from '@/components/users/user-edit-dialog';
 import { UserDeleteDialog } from '@/components/users/user-delete-dialog';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 15;
 
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);

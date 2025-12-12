@@ -31,7 +31,7 @@ import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
 import { AssetStatusBadge } from '@/components/assets/asset-status-badge';
 import { CompanyStatusBadge } from '@/components/companies/company-status-badge';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 15;
 
 interface Company {
     id: string;

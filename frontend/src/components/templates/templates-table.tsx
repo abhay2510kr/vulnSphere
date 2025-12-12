@@ -173,18 +173,13 @@ export function TemplatesTable() {
                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex justify-end gap-2">
                                             {(user?.role === 'ADMIN' || user?.role === 'TESTER') && (
-                                                <>
-                                                    <Button variant="ghost" size="sm">
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => setTemplateToDelete(template.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setTemplateToDelete(template.id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
                                             )}
                                         </div>
                                     </TableCell>

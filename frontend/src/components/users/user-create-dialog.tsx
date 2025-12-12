@@ -84,7 +84,7 @@ export function UserCreateDialog({ open, onOpenChange, onSuccess }: UserCreateDi
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Add New User</DialogTitle>
@@ -92,7 +92,7 @@ export function UserCreateDialog({ open, onOpenChange, onSuccess }: UserCreateDi
                             Create a new user account. They will be able to login with the provided credentials.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                         {error && (
                             <Alert variant="destructive">
                                 <AlertDescription>{error}</AlertDescription>
