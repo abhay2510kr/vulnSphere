@@ -2,8 +2,7 @@
 
 export const TIPTAP_TEMPLATES = {
   // New vulnerability template
-  NEW_VULNERABILITY: `<h1>Vulnerability Details</h1>
-<h2>Description</h2>
+  NEW_VULNERABILITY: `<h2>Description</h2>
 <p><em>Provide a detailed description of the vulnerability</em></p>
 <h2>Impact</h2>
 <p><em>Describe the potential impact and consequences</em></p>
@@ -22,8 +21,7 @@ export const TIPTAP_TEMPLATES = {
   NEW_RETEST: `Vulnerability is fixed!`,
 
   // Empty template for templates
-  EMPTY_TEMPLATE: `<h1>Template Details</h1>
-<h2>Description</h2>
+  EMPTY_TEMPLATE: `<h2>Description</h2>
 <p><em>Provide a detailed description of the vulnerability</em></p>
 <h2>Impact</h2>
 <p><em>Describe the potential impact and consequences</em></p>
