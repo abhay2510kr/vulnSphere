@@ -470,7 +470,7 @@ export const MDXEditorComponent = forwardRef<MDXEditorMethods, MDXEditorProps>((
             />
 
             {/* Editor and Preview */}
-            <div className={cn("flex relative", showPreview ? "" : "")} style={showPreview ? { height: `${height}px` } : {}}>
+            <div className={cn("flex relative", showPreview ? "" : "")} style={{ height: `${height}px` }}>
                 {/* Markdown Editor */}
                 <div className={cn(showPreview ? "border-r" : "w-full")} style={{ width: showPreview ? `${editorWidth}%` : '100%' }}>
                     <textarea
@@ -480,10 +480,9 @@ export const MDXEditorComponent = forwardRef<MDXEditorMethods, MDXEditorProps>((
                         onPaste={handlePaste}
                         placeholder={placeholder}
                         className={cn(
-                            "w-full p-4 outline-none resize-none bg-background font-mono text-sm",
-                            showPreview ? "" : "min-h-[200px]"
+                            "w-full p-4 outline-none resize-none bg-background font-mono text-sm"
                         )}
-                        style={{ height: showPreview ? `${height}px` : '200px' }}
+                        style={{ height: `${height}px` }}
                     />
                 </div>
 
