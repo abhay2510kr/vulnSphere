@@ -336,7 +336,7 @@ export const AttachmentManager = forwardRef<AttachmentManagerRef, AttachmentMana
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Attachments</CardTitle>
+                    <CardTitle className="text-base font-medium">Attachments</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-2">
@@ -354,8 +354,8 @@ export const AttachmentManager = forwardRef<AttachmentManagerRef, AttachmentMana
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="flex items-center gap-2">
-                            <Paperclip className="h-5 w-5" />
+                        <CardTitle className="flex items-center gap-2 text-base font-medium">
+                            <Paperclip className="h-4 w-4" />
                             Attachments ({attachments.length})
                         </CardTitle>
                         <CardDescription>
@@ -387,36 +387,19 @@ export const AttachmentManager = forwardRef<AttachmentManagerRef, AttachmentMana
                     <div className="text-center py-8 text-muted-foreground">
                         <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No attachments yet</p>
-                        <p className="text-sm">Upload files using markdown editor or other upload features</p>
+                        <p className="text-sm">Upload files using the upload button above</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <div className="space-y-2">
                         {attachments.map((attachment) => (
-                            <Card key={attachment.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                                <div className="aspect-square bg-muted relative">
-                                    {attachment.file_name.match(/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i) ? (
-                                        <img
-                                            src={attachment.file}
-                                            alt={attachment.file_name}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                // Fallback to icon if image fails to load
-                                                e.currentTarget.style.display = 'none';
-                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                            }}
-                                        />
-                                    ) : null}
-                                    <div className="hidden w-full h-full flex items-center justify-center">
+                            <div key={attachment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="flex-shrink-0">
                                         {getFileIcon(attachment.file_name)}
-                                        <span className="ml-1 text-xs text-muted-foreground">
-                                            {attachment.file_name.split('.').pop()?.toUpperCase()}
-                                        </span>
                                     </div>
-                                </div>
-                                <CardContent className="p-2">
-                                    <div className="space-y-1">
-                                        <div className="flex items-start justify-between gap-1">
-                                            <h3 className="font-medium text-xs truncate flex-1" title={attachment.file_name}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-medium text-sm truncate" title={attachment.file_name}>
                                                 {attachment.file_name}
                                             </h3>
                                             {attachment.file_size && (
@@ -426,49 +409,45 @@ export const AttachmentManager = forwardRef<AttachmentManagerRef, AttachmentMana
                                             )}
                                         </div>
                                         {attachment.description && (
-                                            <p className="text-xs text-muted-foreground overflow-hidden" style={{ 
-                                                display: '-webkit-box',
-                                                WebkitLineClamp: 1,
-                                                WebkitBoxOrient: 'vertical'
-                                            }} title={attachment.description}>
+                                            <p className="text-xs text-muted-foreground mt-1" title={attachment.description}>
                                                 {attachment.description}
                                             </p>
                                         )}
-                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                            <span className="truncate">{formatDistanceToNow(new Date(attachment.uploaded_at), { addSuffix: true })}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 pt-1">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-xs"
-                                                onClick={() => window.open(attachment.file, '_blank')}
-                                            >
-                                                <Download className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-xs"
-                                                onClick={() => openEditDialog(attachment)}
-                                            >
-                                                <Edit className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-xs"
-                                                onClick={() => {
-                                                    setAttachmentToDelete(attachment);
-                                                    setDeleteDialogOpen(true);
-                                                }}
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
-                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {formatDistanceToNow(new Date(attachment.uploaded_at), { addSuffix: true })} • {attachment.user_name}
+                                        </p>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs"
+                                        onClick={() => window.open(attachment.file, '_blank')}
+                                    >
+                                        <Download className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs"
+                                        onClick={() => openEditDialog(attachment)}
+                                    >
+                                        <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs"
+                                        onClick={() => {
+                                            setAttachmentToDelete(attachment);
+                                            setDeleteDialogOpen(true);
+                                        }}
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}

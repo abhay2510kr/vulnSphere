@@ -1,245 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import api from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Pencil, ExternalLink, FileText, MessageSquare } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import { RetestCard } from '@/components/vulnerabilities/retest-card';
-import { VulnerabilityComments } from '@/components/vulnerabilities/vulnerability-comments';
-import { RetestRequestButton } from '@/components/vulnerabilities/retest-request-button';
-import { useAuth } from '@/hooks/use-auth';
-import { SeverityBadge } from '@/components/vulnerabilities/severity-badge';
-import { StatusBadge } from '@/components/vulnerabilities/status-badge';
-
-interface Vulnerability {
-    id: string;
-    title: string;
-    severity: string;
-    status: string;
-    cvss_base_score: number | null;
-    cvss_vector: string;
-    details_md: string;
-    references: string[];
-    created_at: string;
-    updated_at: string;
-}
-
-interface Comment {
-    id: string;
-}
+import { Suspense } from 'react';
+import { useParams } from 'next/navigation';
+import { VulnerabilityPanel } from '@/components/vulnerabilities/vulnerability-panel';
 
 export default function VulnerabilityViewPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-64"><p className="text-muted-foreground">Loading...</p></div>}>
+            <VulnerabilityPageContent />
+        </Suspense>
+    );
+}
+
+function VulnerabilityPageContent() {
     const params = useParams();
-    const router = useRouter();
-    const { canEdit, isClient } = useAuth();
     const projectId = params.projectId as string;
     const vulnId = params.vulnId as string;
 
-    const [vulnerability, setVulnerability] = useState<Vulnerability | null>(null);
-    const [companyId, setCompanyId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [commentsCount, setCommentsCount] = useState(0);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Fetch project to get company ID
-                const projectRes = await api.get(`/projects/${projectId}/`);
-                setCompanyId(projectRes.data.company);
-
-                // Fetch vulnerability
-                const vulnRes = await api.get(
-                    `/companies/${projectRes.data.company}/projects/${projectId}/vulnerabilities/${vulnId}/`
-                );
-                setVulnerability(vulnRes.data);
-
-                // Fetch comments count
-                const commentsRes = await api.get('/comments/', {
-                    params: { vulnerability: vulnId }
-                });
-                setCommentsCount((commentsRes.data.results || commentsRes.data || []).length);
-            } catch (err) {
-                console.error('Failed to load vulnerability', err);
-                setError('Failed to load vulnerability');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [projectId, vulnId]);
-
-
-
-    if (loading) {
-        return (
-            <div className="space-y-6">
-                <Card>
-                    <CardContent className="pt-6">
-                        <p className="text-center text-muted-foreground">Loading...</p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
-    if (error || !vulnerability) {
-        return (
-            <div className="space-y-6">
-                <Card>
-                    <CardContent className="pt-6">
-                        <p className="text-center text-destructive">{error || 'Vulnerability not found'}</p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{vulnerability.title}</h1>
-                    </div>
-                </div>
-                {canEdit ? (
-                    <Button onClick={() => router.push(`/project/${projectId}/vulnerabilities/${vulnId}/edit`)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                    </Button>
-                ) : isClient && companyId ? (
-                    <RetestRequestButton
-                        companyId={companyId}
-                        projectId={projectId}
-                        vulnerabilityId={vulnId}
-                    />
-                ) : null}
-            </div>
-
-            {/* Overview Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Overview</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Severity</p>
-                            <div className="mt-1">
-                                <SeverityBadge severity={vulnerability.severity} />
-                            </div>
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Status</p>
-                            <div className="mt-1">
-                                <StatusBadge status={vulnerability.status} />
-                            </div>
-                        </div>
-                        {vulnerability.cvss_base_score && (
-                            <div>
-                                <p className="text-sm text-muted-foreground">CVSS Score</p>
-                                <p className="mt-1 font-medium">{vulnerability.cvss_base_score}</p>
-                            </div>
-                        )}
-                        {vulnerability.cvss_vector && (
-                            <div className="col-span-2">
-                                <p className="text-sm text-muted-foreground">CVSS Vector</p>
-                                <p className="mt-1 font-mono text-sm">{vulnerability.cvss_vector}</p>
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Tabs for Details and Comments */}
-            <Tabs defaultValue="details" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="details" className="gap-2">
-                        <FileText className="h-4 w-4" />
-                        Details
-                    </TabsTrigger>
-                    <TabsTrigger value="comments" className="gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        Comments
-                        {commentsCount > 0 && (
-                            <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                                {commentsCount}
-                            </Badge>
-                        )}
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="details" className="space-y-6">
-                    {/* Details */}
-                    {vulnerability.details_md && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Details</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="prose dark:prose-invert max-w-none">
-                                    <ReactMarkdown>{vulnerability.details_md}</ReactMarkdown>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* References */}
-                    {vulnerability.references && vulnerability.references.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>References</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-2">
-                                    {vulnerability.references.map((ref, index) => (
-                                        <li key={index} className="flex items-center gap-2">
-                                            <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                            <a
-                                                href={ref.startsWith('http') ? ref : `https://${ref}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
-                                            >
-                                                {ref}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Retest History */}
-                    {companyId && projectId && vulnId && (
-                        <RetestCard
-                            companyId={companyId}
-                            projectId={projectId}
-                            vulnerabilityId={vulnId}
-                        />
-                    )}
-                </TabsContent>
-
-                <TabsContent value="comments">
-                    {companyId && projectId && vulnId && (
-                        <VulnerabilityComments
-                            companyId={companyId}
-                            projectId={projectId}
-                            vulnerabilityId={vulnId}
-                        />
-                    )}
-                </TabsContent>
-            </Tabs>
+        <div className="h-full">
+            <VulnerabilityPanel 
+                projectId={projectId} 
+                vulnerabilityId={vulnId}
+            />
         </div>
     );
 }

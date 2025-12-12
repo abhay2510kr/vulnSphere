@@ -345,7 +345,7 @@ export default function ProjectDetailPage() {
                     </Button>
                     <Button onClick={() => setReportDialogOpen(true)}>
                         <FileText className="mr-2 h-4 w-4" />
-                        Create Report
+                        Generate Report
                     </Button>
                 </div>
             </div>
@@ -577,10 +577,8 @@ export default function ProjectDetailPage() {
                                                             className="flex justify-end gap-2"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
-                                                            <Button variant="ghost" size="sm" asChild>
-                                                                <Link href={`/project/${projectId}/vulnerabilities/${vuln.id}/edit`}>
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Link>
+                                                            <Button variant="ghost" size="sm">
+                                                                <Eye className="h-4 w-4" />
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"

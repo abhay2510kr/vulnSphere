@@ -182,9 +182,8 @@ export function RetestCard({ companyId, projectId, vulnerabilityId, onImageUploa
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div className="flex items-center gap-2">
-                    <History className="h-5 w-5" />
-                    <CardTitle>Retest History</CardTitle>
-                    <Badge variant="outline">{retests.length}</Badge>
+                    <History className="h-4 w-4" />
+                    <CardTitle className="text-base font-medium">Retest History ({retests.length})</CardTitle>
                 </div>
                 {!isAdding && canEdit && (
                     <Button size="sm" onClick={() => setIsAdding(true)}>
