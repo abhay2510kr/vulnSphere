@@ -259,7 +259,7 @@ export function RetestCard({ companyId, projectId, vulnerabilityId, onImageUploa
                                 vulnerabilityId={vulnerabilityId}
                                 onImageUploaded={onImageUploaded}
                                 context="vulnerability"
-                                height={300}
+                                height={200}
                             />
                         </div>
 
