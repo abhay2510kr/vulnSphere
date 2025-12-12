@@ -154,7 +154,15 @@ class ReportGenerator:
 
     def _generate_docx(self, template, context, generated_report_instance):
         doc = DocxTemplate(template.file.path)
-        doc.render(context)
+        
+        # Sanitize context to only include primitive data structures
+        sanitized_context = self._sanitize_context(context)
+        
+        # Add today's date to context
+        from datetime import date
+        sanitized_context['today'] = date.today().strftime('%B %d, %Y')
+        
+        doc.render(sanitized_context)
         
         # Save to buffer
         buffer = BytesIO()
