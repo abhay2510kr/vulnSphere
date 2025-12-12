@@ -63,8 +63,7 @@ class User(AbstractUser):
 
 class Company(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=255, unique=True)
     contact_email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True)
     notes = models.TextField(blank=True)
