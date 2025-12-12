@@ -16,6 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.http import FileResponse, Http404
+from django.views.static import serve
 from .authentication import CustomTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -39,5 +43,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 # Serve media files in both development and production
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    # Development mode - use Django's static serving
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # Production mode - custom media serving
+    urlpatterns += [
+        path('media/<path:path>', serve, {
+            'document_root': settings.MEDIA_ROOT,
+        }),
+    ]
 
