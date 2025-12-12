@@ -15,8 +15,8 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'contact_email', 'is_active', 'created_at')
-    search_fields = ('name', 'slug', 'contact_email')
+    list_display = ('name', 'contact_email', 'is_active', 'created_at')
+    search_fields = ('name', 'contact_email')
     list_filter = ('is_active', 'created_at')
 
 # CompanyMembership admin removed - users now have global roles
