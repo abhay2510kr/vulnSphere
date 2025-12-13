@@ -43,8 +43,8 @@ VulnSphere includes a powerful and modern rich text editor based on **TipTap**, 
 - **Color Highlighting**: Use different colors to highlight important text.
 
 ## 📸 Screenshots
-![Dashboard](https://i.ibb.co/dJwFrZKp/Screenshot-2025-12-13-at-5-36-15-PM.png)
-![Editor](https://i.ibb.co/KxM1vKZV/Screenshot-2025-12-13-at-5-36-51-PM.png)
+![Dashboard](https://i.postimg.cc/zGLjdnZb/Screenshot-2025-12-13-at-5-36-15-PM.png)
+![Editor](https://i.postimg.cc/nh61NCnx/Screenshot-2025-12-13-at-5-36-51-PM.png)
 
 ## 🛠️ Installation
 
