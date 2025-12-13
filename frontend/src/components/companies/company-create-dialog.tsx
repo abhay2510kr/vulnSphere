@@ -91,14 +91,13 @@ export function CompanyCreateDialog({ open, onOpenChange, onSuccess }: CompanyCr
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="contact_email">Contact Email *</Label>
+                            <Label htmlFor="contact_email">Contact Email</Label>
                             <Input
                                 id="contact_email"
                                 type="email"
-                                required
                                 value={formData.contact_email}
                                 onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                                placeholder="contact@company.com"
+                                placeholder="contact@company.com (optional)"
                             />
                         </div>
                         <div className="grid gap-2">

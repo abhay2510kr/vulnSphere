@@ -110,11 +110,10 @@ export function CompanyEditDialog({ company, open, onOpenChange, onSuccess }: Co
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="edit-contact-email">Contact Email *</Label>
+                            <Label htmlFor="edit-contact-email">Contact Email</Label>
                             <Input
                                 id="edit-contact-email"
                                 type="email"
-                                required
                                 value={formData.contact_email}
                                 onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
                             />
