@@ -79,11 +79,17 @@ def import_report_template(template_path, template_name, template_description):
     else:
         print(f"{template_name.split()[0]} template already exists")
 
-# Import HTML template
+# Import HTML templates
 import_report_template(
-    '/app/media/report_templates/standard_template.html',
-    'Standard HTML Report Template',
-    'Security assessment report template with executive summary, scope overview, vulnerability summary, and detailed findings.'
+    '/app/media/report_templates/project_template.html',
+    'Project HTML Report Template',
+    'Security assessment report template for individual projects with executive summary, scope overview, vulnerability summary, and detailed findings.'
+)
+
+import_report_template(
+    '/app/media/report_templates/company_template.html',
+    'Company HTML Report Template',
+    'Company-wide security assessment report template with aggregated vulnerability analysis across all projects and executive summary.'
 )
 
 # Import DOCX template

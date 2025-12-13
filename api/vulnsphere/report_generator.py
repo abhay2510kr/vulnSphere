@@ -266,12 +266,12 @@ class ReportGenerator:
         
         vulnerabilities = project.vulnerabilities.all().order_by('-severity', '-created_at')
         
-        # Calculate risk counts
+        # Calculate severity counts
         counts = Counter(v.severity for v in vulnerabilities)
-        risk_counts = {
+        severity_counts = {
             'critical': int(counts.get('CRITICAL', 0)),
             'high': int(counts.get('HIGH', 0)),
-            'med': int(counts.get('MEDIUM', 0)),
+            'medium': int(counts.get('MEDIUM', 0)),
             'low': int(counts.get('LOW', 0)),
             'info': int(counts.get('INFO', 0)),
             'total': int(len(vulnerabilities))
@@ -287,18 +287,19 @@ class ReportGenerator:
                 'company': project.company.name,
                 'engagement_type': project.engagement_type,
                 'summary': render_markdown(project.summary, inline_images=inline_images),
-                'scope_description': render_markdown(project.scope_description, inline_images=inline_images),
+                'scope': render_markdown(project.scope_description, inline_images=inline_images),
                 'start_date': project.start_date.strftime('%B %d, %Y'),
                 'end_date': project.end_date.strftime('%B %d, %Y'),
-                'status': project.get_status_display(),
+                'status': project.status,
+                'status_display': project.get_status_display(),
             },
-            'risk_counts': risk_counts,
-            'risk_types': [
-                {'severity': 'critical', 'label': 'Critical', 'count': risk_counts['critical']},
-                {'severity': 'high', 'label': 'High', 'count': risk_counts['high']},
-                {'severity': 'medium', 'label': 'Medium', 'count': risk_counts['med']},
-                {'severity': 'low', 'label': 'Low', 'count': risk_counts['low']},
-                {'severity': 'info', 'label': 'Info', 'count': risk_counts['info']}
+            'severity_counts': severity_counts,
+            'severities': [
+                {'severity': 'critical', 'label': 'Critical', 'count': severity_counts['critical']},
+                {'severity': 'high', 'label': 'High', 'count': severity_counts['high']},
+                {'severity': 'medium', 'label': 'Medium', 'count': severity_counts['medium']},
+                {'severity': 'low', 'label': 'Low', 'count': severity_counts['low']},
+                {'severity': 'info', 'label': 'Info', 'count': severity_counts['info']}
             ],
             'assets': assets_list,
             'vulnerabilities': []
@@ -311,13 +312,13 @@ class ReportGenerator:
             vuln_data = {
                 'id': str(vuln.id),
                 'title': vuln.title,
-                'severity': vuln.severity, # Keep raw for logic, display using filter or separate field
+                'severity': vuln.severity,
                 'severity_display': 'Info' if vuln.get_severity_display() == 'Informational' else vuln.get_severity_display(),
-                'status': vuln.get_status_display(),
-                'status_code': vuln.status,
-                'cvss_base_score': str(vuln.cvss_base_score) if vuln.cvss_base_score else 'N/A',
+                'status': vuln.status,
+                'status_display': vuln.get_status_display(),
+                'cvss_score': str(vuln.cvss_base_score) if vuln.cvss_base_score else 'N/A',
                 'cvss_vector': vuln.cvss_vector,
-                'description': render_markdown(vuln.details_md, inline_images=inline_images),  # Rendered HTML with code highlighting
+                'description': render_markdown(vuln.details_md, inline_images=inline_images),
                 'created_at': vuln.created_at.strftime('%B %d, %Y'),
                 'assets': [{'name': a.name, 'url': a.identifier} for a in vuln.assets.all()],
                 'retests': []
@@ -342,16 +343,41 @@ class ReportGenerator:
     
     def get_company_context(self, company, inline_images=False):
         """Get comprehensive company context for report generation"""
+        from collections import Counter
+        
         projects = company.projects.all().order_by('-created_at')
+        
+        # Calculate company-wide severity counts across all projects
+        all_vulnerabilities = []
+        for project in projects:
+            all_vulnerabilities.extend(project.vulnerabilities.all())
+        
+        counts = Counter(v.severity for v in all_vulnerabilities)
+        company_severity_counts = {
+            'critical': int(counts.get('CRITICAL', 0)),
+            'high': int(counts.get('HIGH', 0)),
+            'medium': int(counts.get('MEDIUM', 0)),
+            'low': int(counts.get('LOW', 0)),
+            'info': int(counts.get('INFO', 0)),
+            'total': int(len(all_vulnerabilities))
+        }
         
         context = {
             'company': {
                 'id': str(company.id),
                 'name': company.name,
-                'contact_email': company.contact_email,
+                'email': company.contact_email,
                 'address': company.address,
-                'notes': render_markdown(company.notes, inline_images=inline_images),  # Rendered HTML
+                'notes': render_markdown(company.notes, inline_images=inline_images),
             },
+            'company_severity_counts': company_severity_counts,
+            'company_severities': [
+                {'severity': 'critical', 'label': 'Critical', 'count': company_severity_counts['critical']},
+                {'severity': 'high', 'label': 'High', 'count': company_severity_counts['high']},
+                {'severity': 'medium', 'label': 'Medium', 'count': company_severity_counts['medium']},
+                {'severity': 'low', 'label': 'Low', 'count': company_severity_counts['low']},
+                {'severity': 'info', 'label': 'Info', 'count': company_severity_counts['info']}
+            ],
             'projects': []
         }
         
@@ -362,8 +388,9 @@ class ReportGenerator:
                 'engagement_type': project.engagement_type,
                 'start_date': project.start_date.strftime('%B %d, %Y'),
                 'end_date': project.end_date.strftime('%B %d, %Y'),
-                'status': project.get_status_display(),
-                'vulnerability_count': project.vulnerabilities.count(),
+                'status': project.status,
+                'status_display': project.get_status_display(),
+                'vuln_count': project.vulnerabilities.count(),
             })
         
         return context

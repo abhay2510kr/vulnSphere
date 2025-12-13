@@ -717,19 +717,19 @@
                 The primary purpose of this assessment was to identify security vulnerabilities and weaknesses and
                 assess the associated impact on the business on the identified scope.
                 <br>
-                {% if risk_counts.total > 5 %}
+                {% if severity_counts.total > 5 %}
                 The security assessment revealed significant concerns in the tested environment. A total of
-                {{risk_counts.total}} vulnerabilities were identified{% if risk_counts.critical > 0 %}, including
-                {{risk_counts.critical}} critical-severity issues that require immediate attention{% endif %}{% if
-                risk_counts.high > 0 %} and {{risk_counts.high}} high-severity vulnerabilities that pose substantial
-                risk{% endif %}. The findings indicate that the current security posture requires comprehensive
-                improvements to better protect the system and its resources.
+                {{severity_counts.total}} vulnerabilities were identified{% if severity_counts.critical > 0 %}, including
+                {{severity_counts.critical}} critical-severity issues that require immediate attention{% endif %}{% if
+                severity_counts.high > 0 %} and {{severity_counts.high}} high-severity vulnerabilities that pose substantial
+                risk{% endif %}. The findings indicate that current security posture requires comprehensive
+                improvements to better protect system and its resources.
                 {% else %}
-                The security assessment identified a relatively moderate number of {{risk_counts.total}} vulnerabilities
-                in the tested environment{% if risk_counts.critical > 0 or risk_counts.high > 0 %}. However, the
-                presence of {% if risk_counts.critical > 0 %}{{risk_counts.critical}} critical{% endif %}{% if
-                risk_counts.critical > 0 and risk_counts.high > 0 %} and {% endif %}{% if risk_counts.high > 0
-                %}{{risk_counts.high}} high{% endif %} severity findings indicates that immediate attention is required
+                The security assessment identified a relatively moderate number of {{severity_counts.total}} vulnerabilities
+                in tested environment{% if severity_counts.critical > 0 or severity_counts.high > 0 %}. However,
+                presence of {% if severity_counts.critical > 0 %}{{severity_counts.critical}} critical{% endif %}{% if
+                severity_counts.critical > 0 and severity_counts.high > 0 %} and {% endif %}{% if severity_counts.high > 0
+                %}{{severity_counts.high}} high{% endif %} severity findings indicates that immediate attention is required
                 to address significant security risks{% endif %}. The overall security posture shows room for
                 improvement through targeted remediation efforts.
                 {% endif %}
@@ -742,49 +742,49 @@
 
                 </style>
                 <div class="risk-boxes">
-                    {% set risk_types = [
-                    {'severity': 'critical', 'label': 'Critical', 'count': risk_counts.critical},
-                    {'severity': 'high', 'label': 'High', 'count': risk_counts.high},
-                    {'severity': 'medium', 'label': 'Medium', 'count': risk_counts.med},
-                    {'severity': 'low', 'label': 'Low', 'count': risk_counts.low},
-                    {'severity': 'info', 'label': 'Info', 'count': risk_counts.info}
+                    {% set severity_types = [
+                    {'severity': 'critical', 'label': 'Critical', 'count': severity_counts.critical},
+                    {'severity': 'high', 'label': 'High', 'count': severity_counts.high},
+                    {'severity': 'medium', 'label': 'Medium', 'count': severity_counts.medium},
+                    {'severity': 'low', 'label': 'Low', 'count': severity_counts.low},
+                    {'severity': 'info', 'label': 'Info', 'count': severity_counts.info}
                     ] %}
-                    {% for risk in risk_types %}
-                    <div class="risk-box {{risk.severity}}">
-                        <div class="risk-box-label">{{risk.label}}</div>
-                        <div class="risk-box-count">{{risk.count}}</div>
+                    {% for severity in severity_types %}
+                    <div class="risk-box {{severity.severity}}">
+                        <div class="risk-box-label">{{severity.label}}</div>
+                        <div class="risk-box-count">{{severity.count}}</div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             <p class="content-justify">
 
-                {% if risk_counts.critical > 0 %}
-                Of particular concern are the critical vulnerabilities discovered, including {% for vulnerability in
+                {% if severity_counts.critical > 0 %}
+                Of particular concern are critical vulnerabilities discovered, including {% for vulnerability in
                 vulnerabilities if vulnerability.severity == 'CRITICAL' %}{{ vulnerability.title }}{% if not loop.last
                 %}, {% endif %}{% endfor %}. These issues require immediate remediation to prevent potential system
                 compromise.
                 {% endif %}
 
-                {% if risk_counts.high > 0 %}
+                {% if severity_counts.high > 0 %}
                 High-severity findings such as {% for vulnerability in vulnerabilities if vulnerability.severity ==
                 'HIGH' %}{{ vulnerability.title }}{% if not loop.last %}, {% endif %}{% endfor %} also pose significant
                 risks that should be addressed promptly.
                 {% endif %}
 
-                {% if risk_counts.med > 0 %}
+                {% if severity_counts.medium > 0 %}
                 Several medium-risk vulnerabilities were identified, including {% for vulnerability in vulnerabilities
                 if vulnerability.severity == 'MEDIUM' %}{{ vulnerability.title }}{% if not loop.last %}, {% endif %}{%
                 endfor %}, which could potentially be exploited to compromise system security.
                 {% endif %}
 
-                {% if risk_counts.low > 0 %}
+                {% if severity_counts.low > 0 %}
                 The assessment also revealed low-severity issues that, while not critical, should be addressed as part
                 of ongoing security maintenance.
                 {% endif %}
 
-                Based on these findings, we recommend implementing a prioritized remediation plan focusing on the {% if
-                risk_counts.critical > 0 %}critical{% elif risk_counts.high > 0 %}high{% elif risk_counts.med > 0
+                Based on these findings, we recommend implementing a prioritized remediation plan focusing on {% if
+                severity_counts.critical > 0 %}critical{% elif severity_counts.high > 0 %}high{% elif severity_counts.medium > 0
                 %}medium{% else %}identified{% endif %} severity issues first to strengthen the overall security
                 posture.
                 <br>

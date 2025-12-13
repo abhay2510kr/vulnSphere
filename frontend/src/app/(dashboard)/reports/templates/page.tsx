@@ -6,6 +6,7 @@ import { Plus, FileText } from 'lucide-react';
 import { TemplatesTable } from '@/components/reports/templates-table';
 import { TemplateUploadDialog } from '@/components/reports/template-upload-dialog';
 import { TemplateEditDialog } from '@/components/reports/template-edit-dialog';
+import { KeywordsDialog } from '@/components/reports/keywords-dialog';
 import api from '@/lib/api';
 import { ReportTemplate } from '@/lib/types';
 import Link from 'next/link';
@@ -66,6 +67,7 @@ export default function TemplatesPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <KeywordsDialog />
                     <Button variant="outline" asChild>
                         <Link href="/reports">
                             <FileText className="mr-2 h-4 w-4" />
