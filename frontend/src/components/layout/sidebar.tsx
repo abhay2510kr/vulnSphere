@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { LayoutDashboard, Building2, Shield, FileText, Settings, LogOut, Sun, Moon, Users, ShieldAlert, Activity, FolderKanban, Copy } from 'lucide-react';
+import { LayoutDashboard, Building2, Shield, FileText, Settings, LogOut, Sun, Moon, Users, ShieldAlert, Activity, FolderKanban, Copy, Menu, PanelLeft } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
@@ -21,6 +21,7 @@ export function Sidebar({ className }: SidebarProps) {
     const router = useRouter();
     const { setTheme, theme } = useTheme();
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -39,50 +40,63 @@ export function Sidebar({ className }: SidebarProps) {
     const showAdminLinks = currentUser && isAdmin(currentUser);
 
     return (
-        <div className={cn("pb-12 w-64 border-r bg-card relative", className)}>
+        <div className={cn("pb-12 border-r bg-card relative transition-all duration-300", isCollapsed ? "w-16" : "w-64", className)}>
             <div className="space-y-4 py-4">
                 <div className="px-3 py-2">
-                    <div className="mb-4 px-4">
-                        <VulnSphereLogo />
+                    <div className={cn("mb-4 px-4 flex items-center", isCollapsed ? "justify-center" : "justify-between")}>
+                        {!isCollapsed && <VulnSphereLogo />}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsCollapsed(!isCollapsed)}
+                            className="flex-shrink-0"
+                        >
+                            {isCollapsed ? (
+                                <Menu className="h-4 w-4" />
+                            ) : (
+                                <PanelLeft className="h-4 w-4" />
+                            )}
+                            <span className="sr-only">Toggle sidebar</span>
+                        </Button>
                     </div>
                     <div className="space-y-1">
-                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/dashboard' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/dashboard' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                             <Link href="/dashboard">
-                                <LayoutDashboard className="mr-3 h-4 w-4" />
-                                Dashboard
+                                <LayoutDashboard className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                {!isCollapsed && <span>Dashboard</span>}
                             </Link>
                         </Button>
-                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/companies' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/companies' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                             <Link href="/companies">
-                                <Building2 className="mr-3 h-4 w-4" />
-                                Companies
+                                <Building2 className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                {!isCollapsed && <span>Companies</span>}
                             </Link>
                         </Button>
-                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/projects' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/projects' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                             <Link href="/projects">
-                                <FolderKanban className="mr-3 h-4 w-4" />
-                                Projects
+                                <FolderKanban className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                {!isCollapsed && <span>Projects</span>}
                             </Link>
                         </Button>
-                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/vulnerabilities' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/vulnerabilities' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                             <Link href="/vulnerabilities">
-                                <ShieldAlert className="mr-3 h-4 w-4" />
-                                Vulnerabilities
+                                <ShieldAlert className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                {!isCollapsed && <span>Vulnerabilities</span>}
                             </Link>
                         </Button>
                         {/* Hide Templates and Reports from clients */}
                         {currentUser && currentUser.role !== 'CLIENT' && (
                             <>
-                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/templates' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/templates' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                                     <Link href="/templates">
-                                        <Copy className="mr-3 h-4 w-4" />
-                                        Templates
+                                        <Copy className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                        {!isCollapsed && <span>Templates</span>}
                                     </Link>
                                 </Button>
-                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/reports' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/reports' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                                     <Link href="/reports">
-                                        <FileText className="mr-3 h-4 w-4" />
-                                        Reports
+                                        <FileText className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                        {!isCollapsed && <span>Reports</span>}
                                     </Link>
                                 </Button>
                             </>
@@ -95,40 +109,47 @@ export function Sidebar({ className }: SidebarProps) {
                     <div className="space-y-1">
                         {showAdminLinks && (
                             <>
-                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/users' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/users' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                                     <Link href="/users">
-                                        <Users className="mr-3 h-4 w-4" />
-                                        Users
+                                        <Users className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                        {!isCollapsed && <span>Users</span>}
                                     </Link>
                                 </Button>
-                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/activity-logs' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                                <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/activity-logs' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                                     <Link href="/activity-logs">
-                                        <Activity className="mr-3 h-4 w-4" />
-                                        Activity Logs
+                                        <Activity className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                        {!isCollapsed && <span>Activity Logs</span>}
                                     </Link>
                                 </Button>
                             </>
                         )}
-                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/settings' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50")} asChild>
+                        <Button variant="ghost" className={cn("w-full justify-start mb-1", pathname === '/settings' ? "bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50 shadow-sm" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50", isCollapsed && "justify-center")} asChild>
                             <Link href="/settings">
-                                <Settings className="mr-3 h-4 w-4" />
-                                Settings
+                                <Settings className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                                {!isCollapsed && <span>Settings</span>}
                             </Link>
                         </Button>
                     </div>
                 </div>
             </div>
 
-            <div className="absolute bottom-4 left-3 right-3 flex items-center gap-2">
+            <div className={cn("absolute bottom-4 left-3 right-3 flex items-center gap-2", isCollapsed && "flex-col")}>
                 <Button
                     variant="ghost"
-                    className="flex-1 justify-start hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    className={cn("flex-1 justify-start hover:bg-destructive hover:text-destructive-foreground transition-colors", isCollapsed && "justify-center p-2")}
                     onClick={handleLogout}
+                    title={isCollapsed ? "Logout" : undefined}
                 >
-                    <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">Logout</span>
+                    <LogOut className="h-4 w-4 flex-shrink-0" />
+                    {!isCollapsed && <span className="truncate">Logout</span>}
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="flex-shrink-0">
+                <Button 
+                    variant="ghost" 
+                    size={isCollapsed ? "icon" : "icon"} 
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                    className="flex-shrink-0"
+                    title={isCollapsed ? "Toggle theme" : undefined}
+                >
                     <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                     <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="sr-only">Toggle theme</span>
