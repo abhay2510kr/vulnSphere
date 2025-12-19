@@ -53,12 +53,9 @@ VulnSphere includes a powerful and modern rich text editor based on **TipTap**, 
 
 ### Quick Start
 ```bash
-# Download the compose file
+# Use the standalone compose file
 mkdir /opt/VulnSphere && cd /opt/VulnSphere
 curl -sSL https://raw.githubusercontent.com/xhzeem/VulnSphere/main/compose.standalone.yml | docker compose -f - up -d
-
-# Start all services
-docker compose -f compose.standalone.yml up -d
 
 # Access the application
 # Frontend: http://localhost:3000
