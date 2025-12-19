@@ -315,12 +315,6 @@ export default function CompanyDetailPage() {
                         <CompanyStatusBadge status={company.is_active} />
                     </div>
                 </div>
-                {!isEditing && canEdit && (
-                    <Button variant="outline" onClick={toggleEdit}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit Company
-                    </Button>
-                )}
             </div>
 
             {/* Statistics Cards */}
@@ -517,6 +511,12 @@ export default function CompanyDetailPage() {
                                 <div>
                                     <CardTitle>Company Information</CardTitle>
                                 </div>
+                                {!isEditing && canEdit && (
+                                    <Button variant="outline" onClick={toggleEdit}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Edit Company
+                                    </Button>
+                                )}
                                 {isEditing && (
                                     <div className="flex gap-2">
                                         <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
