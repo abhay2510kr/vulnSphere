@@ -860,7 +860,10 @@
                     <div class="finding-meta">
                         <span>Severity: <b class="badge-text severity-{{vuln.severity | lower}}">{{vuln.severity_display}}</b></span>
                         <span>Status: <b class="badge-text status-{{vuln.status_code | lower | replace('_', '-')}}">{{vuln.status}}</b></span>
-                        <span>Cvss: <b>{{vuln.cvss_base_score}}</b></span>
+                        <span>Cvss Score: <b>{{vuln.cvss_score}}</b></span>
+                        {% if vuln.cvss_vector %}
+                        <span>Cvss Vector: <b style="font-family: monospace; font-size: 0.9em;">{{vuln.cvss_vector}}</b></span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="finding-description">
