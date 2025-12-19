@@ -52,7 +52,16 @@ export default function CompaniesPage() {
     const fetchCompanies = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/companies/');
+            
+            // Build query params for server-side filtering
+            const params = new URLSearchParams();
+            if (searchQuery) params.append('search', searchQuery);
+            if (statusFilter !== 'all') {
+                const isActive = statusFilter === 'active';
+                params.append('is_active', isActive.toString());
+            }
+            
+            const res = await api.get(`/companies/?${params}`);
             const companyData = res.data.results || res.data;
             
             // Filter inactive companies for non-admin users
@@ -70,27 +79,8 @@ export default function CompaniesPage() {
 
     useEffect(() => {
         fetchCompanies();
-    }, []);
+    }, [searchQuery, statusFilter]);
 
-    useEffect(() => {
-        let result = companies;
-
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(company =>
-                company.name.toLowerCase().includes(query) ||
-                company.contact_email.toLowerCase().includes(query)
-            );
-        }
-
-        if (statusFilter !== 'all') {
-            const isActive = statusFilter === 'active';
-            result = result.filter(company => company.is_active === isActive);
-        }
-
-        setFilteredCompanies(result);
-        setCurrentPage(1); // Reset to first page on search/filter
-    }, [searchQuery, statusFilter, companies]);
 
     const handleEditClick = (e: React.MouseEvent, company: Company) => {
         e.stopPropagation();

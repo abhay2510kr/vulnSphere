@@ -52,7 +52,7 @@ export default function VulnerabilitiesPage() {
 
     useEffect(() => {
         fetchData();
-    }, [currentPage, search]);
+    }, [currentPage, search, selectedCompany, selectedSeverity, selectedStatus]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -63,7 +63,29 @@ export default function VulnerabilitiesPage() {
         try {
             const token = Cookies.get('access_token');
 
-            // Fetch companies
+            // Build query params for server-side filtering
+            const params = new URLSearchParams({
+                page: currentPage.toString(),
+                page_size: '15'
+            });
+            
+            if (search) params.append('search', search);
+            if (selectedCompany !== 'all') params.append('company', selectedCompany);
+            if (selectedSeverity !== 'all') params.append('severity', selectedSeverity);
+            if (selectedStatus !== 'all') params.append('status', selectedStatus);
+
+            // Fetch vulnerabilities with filters
+            const vulnsRes = await fetch(`http://localhost:8000/api/v1/vulnerabilities/?${params}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const vulnsData = await vulnsRes.json();
+            const allVulns = vulnsData.results || vulnsData;
+
+            setVulnerabilities(allVulns);
+            setTotalItems(vulnsData.count || allVulns.length);
+            setTotalPages(Math.ceil((vulnsData.count || allVulns.length) / 15));
+
+            // Fetch companies for dropdown
             const companiesRes = await fetch('http://localhost:8000/api/v1/companies/', {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -71,7 +93,6 @@ export default function VulnerabilitiesPage() {
             const allCompanies = Array.isArray(companiesData.results) ? companiesData.results : Array.isArray(companiesData) ? companiesData : [];
             
             // Get user role to determine if we should filter inactive companies
-            // For now, we'll assume we need to check user role - let me add this check
             const userRes = await fetch('http://localhost:8000/api/v1/users/me/', {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -82,7 +103,7 @@ export default function VulnerabilitiesPage() {
             const filteredCompanies = isAdmin ? allCompanies : allCompanies.filter((company: any) => company.is_active);
             setCompanies(filteredCompanies);
 
-            // Fetch projects
+            // Fetch projects for dropdown
             const projectsRes = await fetch('http://localhost:8000/api/v1/projects/', {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -95,25 +116,6 @@ export default function VulnerabilitiesPage() {
             );
             setProjects(filteredProjects);
 
-            // Fetch all vulnerabilities from visible projects
-            const allVulns: Vulnerability[] = [];
-
-            for (const project of filteredProjects) {
-                try {
-                    const vulnsRes = await fetch(
-                        `http://localhost:8000/api/v1/companies/${project.company}/projects/${project.id}/vulnerabilities/`,
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    );
-                    const vulnsData = await vulnsRes.json();
-                    const vulns = vulnsData.results || vulnsData;
-                    allVulns.push(...vulns);
-                } catch (error) {
-                    console.error(`Error fetching vulns for project ${project.id}:`, error);
-                }
-            }
-
-            setVulnerabilities(allVulns);
-            setTotalItems(allVulns.length);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -121,44 +123,8 @@ export default function VulnerabilitiesPage() {
         }
     };
 
-    const filterVulnerabilities = () => {
-        // This will trigger a re-render with filtered data
-    };
-
-    const getFilteredVulnerabilities = () => {
-        let filtered = vulnerabilities;
-
-        if (search) {
-            filtered = filtered.filter(v =>
-                v.title.toLowerCase().includes(search.toLowerCase())
-            );
-        }
-
-        if (selectedCompany !== 'all') {
-            const companyId = selectedCompany;
-            const companyProjects = projects.filter(p => p.company === companyId).map(p => p.id);
-            filtered = filtered.filter(v => companyProjects.includes(v.project));
-        }
-
-        if (selectedSeverity !== 'all') {
-            filtered = filtered.filter(v => v.severity === selectedSeverity);
-        }
-
-        if (selectedStatus !== 'all') {
-            filtered = filtered.filter(v => v.status === selectedStatus);
-        }
-
-        return filtered;
-    };
-
-    const getPaginatedVulnerabilities = () => {
-        const filtered = getFilteredVulnerabilities();
-        const startIndex = (currentPage - 1) * 15;
-        return filtered.slice(startIndex, startIndex + 15);
-    };
-
-    const getCompanyName = (projectId: string) => {
-        const project = projects.find(p => p.id === projectId);
+    const getCompanyName = (companyId: string) => {
+        const project = projects.find(p => p.id === companyId);
         if (!project) return 'Unknown';
         const company = companies.find(c => c.id === project.company);
         return company?.name || `Company ${project.company}`;
@@ -167,11 +133,6 @@ export default function VulnerabilitiesPage() {
     const getProjectTitle = (projectId: string) => {
         return projects.find(p => p.id === projectId)?.title || `Project ${projectId}`;
     };
-
-
-
-    const filteredVulns = getPaginatedVulnerabilities();
-    const totalFilteredVulns = getFilteredVulnerabilities().length;
 
     return (
         <div className="space-y-6">
@@ -256,14 +217,14 @@ export default function VulnerabilitiesPage() {
                                 Loading...
                             </TableCell>
                         </TableRow>
-                    ) : filteredVulns.length === 0 ? (
+                    ) : vulnerabilities.length === 0 ? (
                         <TableRow>
                             <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                                 No vulnerabilities found
                             </TableCell>
                         </TableRow>
                     ) : (
-                        filteredVulns.map((vuln) => (
+                        vulnerabilities.map((vuln) => (
                             <TableRow
                                 key={vuln.id}
                                 className="cursor-pointer hover:bg-muted/50"
@@ -290,7 +251,7 @@ export default function VulnerabilitiesPage() {
 
             <TablePagination
                 currentPage={currentPage}
-                totalItems={totalFilteredVulns}
+                totalItems={totalItems}
                 itemsPerPage={15}
                 onPageChange={setCurrentPage}
             />

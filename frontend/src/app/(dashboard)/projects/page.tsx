@@ -76,8 +76,10 @@ export default function ProjectsPage() {
             // Build query params
             const params = new URLSearchParams({ page: page.toString(), page_size: ITEMS_PER_PAGE.toString() });
             if (search) params.append('search', search);
+            if (selectedCompany !== 'all') params.append('company', selectedCompany);
+            if (selectedStatus !== 'all') params.append('status', selectedStatus);
 
-            // Fetch projects
+            // Fetch projects with filters
             const projectsRes = await api.get(`/projects/?${params}`);
             const projectsData = projectsRes.data;
 
@@ -87,14 +89,6 @@ export default function ProjectsPage() {
             filteredProjects = filteredProjects.filter((p: Project) => 
                 filteredCompanies.some((company: Company) => company.id === p.company)
             );
-
-            // Client-side filtering for company and status
-            if (selectedCompany !== 'all') {
-                filteredProjects = filteredProjects.filter((p: Project) => p.company.toString() === selectedCompany);
-            }
-            if (selectedStatus !== 'all') {
-                filteredProjects = filteredProjects.filter((p: Project) => p.status === selectedStatus);
-            }
 
             // Fetch vulnerability counts for each project
             const projectsWithCounts = await Promise.all(

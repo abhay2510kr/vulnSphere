@@ -33,7 +33,13 @@ export default function UsersPage() {
     const fetchUsers = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/users/');
+            
+            // Build query params for server-side filtering
+            const params = new URLSearchParams();
+            if (searchQuery) params.append('search', searchQuery);
+            if (roleFilter !== 'all') params.append('role', roleFilter);
+            
+            const res = await api.get(`/users/?${params}`);
             const userData = res.data.results || res.data;
             setUsers(userData);
             setFilteredUsers(userData);
@@ -45,31 +51,11 @@ export default function UsersPage() {
         }
     };
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
     const [roleFilter, setRoleFilter] = useState('all');
 
     useEffect(() => {
-        let result = users;
-
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(user =>
-                user.email.toLowerCase().includes(query) ||
-                user.username.toLowerCase().includes(query) ||
-                user.name.toLowerCase().includes(query)
-            );
-        }
-
-        if (roleFilter !== 'all') {
-            result = result.filter(user => user.role === roleFilter);
-        }
-
-        setFilteredUsers(result);
-        setCurrentPage(1); // Reset to first page on search
-    }, [searchQuery, roleFilter, users]);
+        fetchUsers();
+    }, [searchQuery, roleFilter]);
 
     const handleEditClick = (user: User) => {
         setSelectedUser(user);
