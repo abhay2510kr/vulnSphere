@@ -409,26 +409,35 @@ export default function ProjectDetailPage() {
                             )}
                         </div>
                     </div>
-                    {isEditing && (
-                        <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
                             <Label>Status</Label>
-                            <EnhancedSelect
-                                value={editFormData.status || project.status}
-                                onValueChange={(v: string) => setEditFormData({ ...editFormData, status: v })}
-                                colorType="projectStatus"
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="DRAFT" color="#6b7280">Draft</SelectItem>
-                                    <SelectItem value="IN_REVIEW" color="#3b82f6">In Review</SelectItem>
-                                    <SelectItem value="FINAL" color="#22c55e">Final</SelectItem>
-                                    <SelectItem value="ARCHIVED" color="#f97316">Archived</SelectItem>
-                                </SelectContent>
-                            </EnhancedSelect>
+                            {isEditing ? (
+                                <EnhancedSelect
+                                    value={editFormData.status || project.status}
+                                    onValueChange={(v: string) => setEditFormData({ ...editFormData, status: v })}
+                                    colorType="projectStatus"
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="DRAFT" color="#6b7280">Draft</SelectItem>
+                                        <SelectItem value="IN_REVIEW" color="#3b82f6">In Review</SelectItem>
+                                        <SelectItem value="FINAL" color="#22c55e">Final</SelectItem>
+                                        <SelectItem value="ARCHIVED" color="#f97316">Archived</SelectItem>
+                                    </SelectContent>
+                                </EnhancedSelect>
+                            ) : (
+                                <div className="mt-1">
+                                    <ProjectStatusBadge status={project.status || 'DRAFT'} />
+                                </div>
+                            )}
                         </div>
-                    )}
+                        <div>
+                            {/* Empty div for grid alignment */}
+                        </div>
+                    </div>
                     <div>
                         <Label>Summary</Label>
                         {isEditing ? (
