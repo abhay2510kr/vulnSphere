@@ -15,6 +15,9 @@ router.register(r'comments', CommentViewSet)
 # Dashboard stats
 router.register(r'dashboard', DashboardStatsViewSet, basename='dashboard')
 
+# Global vulnerabilities endpoint
+router.register(r'vulnerabilities', VulnerabilityViewSet, basename='vulnerabilities')
+
 # Companies router
 router.register(r'companies', CompanyViewSet)
 

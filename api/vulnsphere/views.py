@@ -234,9 +234,21 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
         company_pk = self.kwargs.get('company_pk')
         user = self.request.user
         
+        # Global endpoint - show all vulnerabilities user has access to
         if not project_pk or not company_pk:
-            return Vulnerability.objects.none()
+            if user.role == 'ADMIN':
+                queryset = Vulnerability.objects.all()
+            else:
+                # For non-admin users, only show vulnerabilities from their companies
+                queryset = Vulnerability.objects.filter(project__company__in=user.companies.all())
+            
+            # Hide draft vulnerabilities from clients
+            if user.role == 'CLIENT':
+                queryset = queryset.exclude(status='DRAFT')
+            
+            return queryset
         
+        # Nested endpoint - check specific project and company access
         # Check if user has access to this company
         if user.role != 'ADMIN':
             if not user.companies.filter(pk=company_pk).exists():
