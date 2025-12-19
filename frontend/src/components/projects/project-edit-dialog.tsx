@@ -103,32 +103,34 @@ export function ProjectEditDialog({ project, open, onOpenChange, onSuccess }: Pr
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="edit-engagement-type">Engagement Type *</Label>
-                            <Input
-                                id="edit-engagement-type"
-                                required
-                                value={formData.engagement_type}
-                                onChange={(e) => setFormData({ ...formData, engagement_type: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="edit-status">Status *</Label>
-                            <EnhancedSelect
-                                value={formData.status}
-                                onValueChange={(value: string) => setFormData({ ...formData, status: value })}
-                                colorType="projectStatus"
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="DRAFT" color="#6b7280">Draft</SelectItem>
-                                    <SelectItem value="IN_REVIEW" color="#3b82f6">In Review</SelectItem>
-                                    <SelectItem value="FINAL" color="#22c55e">Final</SelectItem>
-                                    <SelectItem value="ARCHIVED" color="#f97316">Archived</SelectItem>
-                                </SelectContent>
-                            </EnhancedSelect>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-engagement-type">Engagement Type *</Label>
+                                <Input
+                                    id="edit-engagement-type"
+                                    required
+                                    value={formData.engagement_type}
+                                    onChange={(e) => setFormData({ ...formData, engagement_type: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-status">Status *</Label>
+                                <EnhancedSelect
+                                    value={formData.status}
+                                    onValueChange={(value: string) => setFormData({ ...formData, status: value })}
+                                    colorType="projectStatus"
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="DRAFT" color="#6b7280">Draft</SelectItem>
+                                        <SelectItem value="IN_REVIEW" color="#3b82f6">In Review</SelectItem>
+                                        <SelectItem value="FINAL" color="#22c55e">Final</SelectItem>
+                                        <SelectItem value="ARCHIVED" color="#f97316">Archived</SelectItem>
+                                    </SelectContent>
+                                </EnhancedSelect>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
